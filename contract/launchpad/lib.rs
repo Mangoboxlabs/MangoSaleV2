@@ -22,13 +22,21 @@ mod launchpad {
     derive(scale_info::TypeInfo, ink_storage::traits::StorageLayout)
     )]
     /**
-    @member ent_time Time of the end of locking
-    @member amount Amount of locking
-    @member contract contract of locking
-    @member contract contract of locking
-    @member is_extract Whether it has been extracted
+    @member owner creater of locking
+    @member start_time Presale start time
+    @member end_time Presale end time
+    @member soft_cap Presale soft top
+    @member hard_cap Presale hard top
+    @member token contract of Presale
+    @member pay_token pay of Presale
+    @member minimum_purchase Minimum purchase quantity
+    @member maximum_purchase maximum purchase quantity
+    @member price_presale presale price
+    @member project_info the information of project
+    @member amount the amount of presale
      */
     pub struct PresaleDetail {
+        id:u128,
         owner:AccountId,
         start_time:u64,
         end_time: u64,
@@ -37,12 +45,16 @@ mod launchpad {
         token: AccountId,
         pay_token: AccountId,
         minimum_purchase:u128,
-        maximum_purchase:u128
+        maximum_purchase:u128,
+        price_presale:u128,
+        project_info:String,
+        amount:u128
     }
     #[ink(storage)]
     pub struct Launchpad {
-        user_locks: StorageHashMap<AccountId, Vec<LockDetail>>,
-        all_locks : Vec<LockDetail>
+        user_presales: StorageHashMap<AccountId, Vec<PresaleDetail>>,
+        all_presales : Vec<PresaleDetail>,
+        presale_charge:StorageHashMap<u128, u128>,
 
     }
     impl Default for launchpad {
@@ -56,82 +68,29 @@ mod launchpad {
         pub fn new() -> Self {
             Self {
                 user_locks:StorageHashMap::new(),
+                presale_charge:StorageHashMap::new(),
                 all_locks:Vec::new()
             }
         }
         /**
         @notice
-        Add a new token lock
-
-        @param contract Token address
-        @param amount Number of locks
-        @end_time Lock end time
+        create a new presale
+        @param data PresaleDetail
          */
         #[ink(message)]
-        pub fn lock(
+        pub fn create(
             &mut self,
-            contract:AccountId,
-            amount:u128,
-            end_time:u64
+            mut data: PresaleDetail
         ) -> bool {
-            if contract == AccountId::default() {return  false }
-            let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(contract);
-            let _ret = erc20.transfer_from(self.env().caller(),self.env().account_id(),amount);
-            let lock = LockDetail{
-                owner:self.env().caller(),
-                end_time,
-                amount,
-                contract,
-                is_extract:false
-            };
-            let mut exists_locks = self.user_locks.get(&self.env().caller()).unwrap_or(&Vec::new()).clone();
-            exists_locks.push(lock.clone());
-            self.user_locks.insert(self.env().caller(),exists_locks);
-            self.all_locks.push(lock);
-            true
-        }
-        /**
-        @notice
-        Additional locking token
-        @param index the id of lock
-        @amount Quantity to be locked
-         */
-        #[ink(message)]
-        pub fn additional_tokens(
-            &mut self,
-            index:u128,
-            amount:u128
-        ) ->bool {
-            let mut exists_locks = self.user_locks.get(&self.env().caller()).unwrap_or(&Vec::new()).clone();
-            for (i,value) in exists_locks.iter_mut().enumerate(){
-                if i == index.try_into().unwrap() {
-                    let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(value.contract);
-                    value.amount += amount;
-                    let _ret = erc20.transfer_from(self.env().caller(),self.env().account_id(),amount);
-                }
-            }
-            self.user_locks.insert(self.env().caller(),exists_locks);
-            true
-        }
-        /**
-        @notice
-        Redefine locked time
-        @param index the id of lock
-        @end_time Lock end time
-         */
-        #[ink(message)]
-        pub fn additional_time(
-            &mut self,
-            index:u128,
-            end_time:u64
-        ) ->bool {
-            let mut exists_locks = self.user_locks.get(&self.env().caller()).unwrap_or(&Vec::new()).clone();
-            for (i,value) in  exists_locks.iter_mut().enumerate(){
-                if i == index.try_into().unwrap() {
-                    value.end_time = end_time;
-                }
-            }
-            self.user_locks.insert(self.env().caller(),exists_locks);
+            if data.token == AccountId::default() {return  false }
+            let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(data.toke);
+            let _ret = erc20.transfer_from(self.env().caller(),self.env().account_id(),data.amount);
+            let mut exists_presale = self.user_presales.get(&self.env().caller()).unwrap_or(&Vec::new()).clone();
+            let id = self.all_presales.len() + 1;
+            data.id = id;
+            exists_presale.push(data.clone());
+            self.user_presales.insert(self.env().caller(),exists_presale);
+            self.all_presales.push(data);
             true
         }
         /**
@@ -140,9 +99,10 @@ mod launchpad {
         @param index the id of lock
          */
         #[ink(message)]
-        pub fn withdraw_token(
+        pub fn buy(
             &mut self,
-            index:u128,
+            id:u128,
+            amount:u128
         ) ->bool {
             let mut exists_locks = self.user_locks.get(&self.env().caller()).unwrap_or(&Vec::new()).clone();
             for (i,value) in  exists_locks.iter_mut().enumerate(){
@@ -159,12 +119,36 @@ mod launchpad {
         }
 
         /**
+          @notice
+          Get all presale
+       */
+        #[ink(message)]
+        pub fn get_all_presale(&self) -> Vec<PresaleDetail> {
+            self.all_presales.clone()
+        }
+        /**
         @notice
-        Get user's locks
+        Get user's presale
          */
         #[ink(message)]
-        pub fn get_user_locks(&self) -> Vec<LockDetail> {
-            self.user_locks.get(&self.env().caller()).unwrap_or(&Vec::new()).clone()
+        pub fn get_user_presale(&self) -> Vec<PresaleDetail> {
+            self.user_presales.get(&self.env().caller()).unwrap_or(&Vec::new()).clone()
+        }
+        /**
+          @notice
+          Get  presale by id
+       */
+        #[ink(message)]
+        pub fn get_presale(&self,id:u128) -> PresaleDetail {
+            self.all_presales[id]
+        }
+        /**
+          @notice
+          Get user's presale
+       */
+        #[ink(message)]
+        pub fn get_presale_charge(&self,id:u128) -> u128 {
+            self.presale_charge.get(&id).unwrap_or(&0).clone()
         }
     }
     #[cfg(test)]
