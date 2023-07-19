@@ -48,48 +48,53 @@ mod launchpad {
         maximum_purchase:u128,
         price_presale:u128,
         project_info:String,
-        amount:u128
+        amount:u128,
     }
     #[ink(storage)]
     pub struct Launchpad {
         user_presales: StorageHashMap<AccountId, Vec<PresaleDetail>>,
         all_presales : Vec<PresaleDetail>,
         presale_charge:StorageHashMap<u128, u128>,
+        every_presale:StorageHashMap<u128, PresaleDetail>,
+
 
     }
-    impl Default for launchpad {
+    impl Default for Launchpad {
         fn default() -> Self {
             Self::new()
         }
     }
 
-    impl launchpad {
+    impl Launchpad {
         #[ink(constructor)]
         pub fn new() -> Self {
             Self {
-                user_locks:StorageHashMap::new(),
+                user_presales:StorageHashMap::new(),
                 presale_charge:StorageHashMap::new(),
-                all_locks:Vec::new()
+                every_presale:StorageHashMap::new(),
+                all_presales:Vec::new()
             }
         }
         /**
         @notice
         create a new presale
-        @param data PresaleDetail
+        @param info PresaleDetail
          */
         #[ink(message)]
         pub fn create(
             &mut self,
-            mut data: PresaleDetail
+            info: PresaleDetail
         ) -> bool {
+            let mut data = info.clone();
             if data.token == AccountId::default() {return  false }
-            let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(data.toke);
+            let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(data.token);
             let _ret = erc20.transfer_from(self.env().caller(),self.env().account_id(),data.amount);
             let mut exists_presale = self.user_presales.get(&self.env().caller()).unwrap_or(&Vec::new()).clone();
             let id = self.all_presales.len() + 1;
-            data.id = id;
+            data.id = id.try_into().unwrap();
             exists_presale.push(data.clone());
             self.user_presales.insert(self.env().caller(),exists_presale);
+            self.every_presale.insert(id.try_into().unwrap(),data.clone());
             self.all_presales.push(data);
             true
         }
@@ -104,18 +109,34 @@ mod launchpad {
             id:u128,
             amount:u128
         ) ->bool {
-            let mut exists_locks = self.user_locks.get(&self.env().caller()).unwrap_or(&Vec::new()).clone();
-            for (i,value) in  exists_locks.iter_mut().enumerate(){
-                if i == index.try_into().unwrap() {
-                    let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(value.contract);
-                    assert!(value.end_time <= self.env().block_timestamp());
-                    let _ret = erc20.transfer(self.env().caller(),value.amount);
-                    value.is_extract = true;
-                    value.amount = 0;
-                    return true
-                }
-            }
-            false
+            let default_pre = PresaleDetail {
+                id:0,
+                owner:AccountId::default(),
+                start_time:0,
+                end_time:0,
+                soft_cap:0,
+                hard_cap:0,
+                token: AccountId::default(),
+                pay_token: AccountId::default(),
+                minimum_purchase:0,
+                maximum_purchase:0,
+                price_presale:0,
+                project_info:String::from("test"),
+                amount:0
+            };
+            let charge = self.presale_charge.get(&id).unwrap_or(&0).clone();
+            let presale = self.every_presale.get(&id).unwrap_or(&default_pre).clone();
+            if presale.token == AccountId::default() {return  false }
+            let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.pay_token);
+            let mut pay_erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.token);
+            assert!(presale.end_time <= self.env().block_timestamp());
+            assert!(presale.start_time >= self.env().block_timestamp());
+            assert!(presale.amount >= charge + amount);
+            let _ret = erc20.transfer_from(self.env().caller(),self.env().account_id(),amount);
+            self.presale_charge.insert(id,charge + amount);
+            let reward_amount = presale.price_presale * amount;
+            let _ret = pay_erc20.transfer(self.env().caller(),reward_amount);
+            true
         }
 
         /**
@@ -140,7 +161,22 @@ mod launchpad {
        */
         #[ink(message)]
         pub fn get_presale(&self,id:u128) -> PresaleDetail {
-            self.all_presales[id]
+            let default_pre = PresaleDetail {
+                id:0,
+                owner:AccountId::default(),
+                start_time:0,
+                end_time:0,
+                soft_cap:0,
+                hard_cap:0,
+                token: AccountId::default(),
+                pay_token: AccountId::default(),
+                minimum_purchase:0,
+                maximum_purchase:0,
+                price_presale:0,
+                project_info:String::from("test"),
+                amount:0
+            };
+            self.every_presale.get(&id).unwrap_or(&default_pre).clone()
         }
         /**
           @notice
@@ -158,29 +194,49 @@ mod launchpad {
         /// Imports `ink_lang` so we can use `#[ink::test]`.
         use ink_lang as ink;
         #[ink::test]
-        fn lock_works() {
-            let mut mp = MangoLock::new();
-            assert!(mp.lock(AccountId::default(),1,1) == false);
+        fn buy_works() {
+            let mut mp = Launchpad::new();
+            assert!(mp.buy(1,1) == false);
         }
         #[ink::test]
-        fn additional_tokens_works() {
-            let mut mp = MangoLock::new();
-            assert!(mp.additional_tokens(0,1) == true);
+        fn create_works() {
+            let mut mp = Launchpad::new();
+            let default_pre = PresaleDetail {
+                id:0,
+                owner:AccountId::default(),
+                start_time:0,
+                end_time:0,
+                soft_cap:0,
+                hard_cap:0,
+                token: AccountId::default(),
+                pay_token: AccountId::default(),
+                minimum_purchase:0,
+                maximum_purchase:0,
+                price_presale:0,
+                project_info:String::from("test"),
+                amount:0
+            };
+            assert!(mp.create(default_pre) == false);
         }
         #[ink::test]
-        fn additional_time_works() {
-            let mut mp = MangoLock::new();
-            assert!(mp.additional_time(0,1) == true);
+        fn get_all_presale_works() {
+            let  mp = Launchpad::new();
+            assert!(mp.get_all_presale().len() == 0);
         }
         #[ink::test]
-        fn withdraw_token_works() {
-            let mut mp = MangoLock::new();
-            assert!(mp.withdraw_token(0) == false);
+        fn get_user_presale_works() {
+            let  mp = Launchpad::new();
+            assert!(mp.get_user_presale().len() == 0);
         }
         #[ink::test]
-        fn get_user_locks_works() {
-            let  mp = MangoLock::new();
-            assert!(mp.get_user_locks().len() == 0);
+        fn get_presale_works() {
+            let  mp = Launchpad::new();
+            assert!(mp.get_presale(0).id == 0);
+        }
+        #[ink::test]
+        fn get_presale_charge_works() {
+            let  mp = Launchpad::new();
+            assert!(mp.get_presale_charge(0) == 0);
         }
     }
 }
