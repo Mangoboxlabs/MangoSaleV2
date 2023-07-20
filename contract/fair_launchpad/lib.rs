@@ -4,7 +4,7 @@ use ink_lang as ink;
 #[allow(unused_imports)]
 #[allow(renamed_and_removed_lints)]
 #[ink::contract]
-mod launchpad {
+mod fair_launchpad {
     use erc20::Erc20;
     use core::convert::TryInto;
     use alloc::string::String;
@@ -51,21 +51,22 @@ mod launchpad {
         amount:u128,
     }
     #[ink(storage)]
-    pub struct Launchpad {
+    pub struct FairLaunchpad {
         user_presales: StorageHashMap<AccountId, Vec<PresaleDetail>>,
         all_presales : Vec<PresaleDetail>,
         presale_charge:StorageHashMap<u128, u128>,
         every_presale:StorageHashMap<u128, PresaleDetail>,
         user_charge:StorageHashMap<(AccountId,u128), u128>,
         user_reward:StorageHashMap<(AccountId,u128), u128>,
+
     }
-    impl Default for Launchpad {
+    impl Default for FairLaunchpad {
         fn default() -> Self {
             Self::new()
         }
     }
 
-    impl Launchpad {
+    impl FairLaunchpad {
         #[ink(constructor)]
         pub fn new() -> Self {
             Self {
@@ -111,52 +112,25 @@ mod launchpad {
             id:u128,
             amount:u128
         ) ->bool {
-            let charge = self.get_presale_charge(id);
+            let charge = self.presale_charge.get(&id).unwrap_or(&0).clone();
             let presale = self.get_presale(id);
             if presale.token == AccountId::default() {return  false }
-            // let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.pay_token);
+            let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.pay_token);
             let mut pay_erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.token);
-            assert!(presale.end_time > self.env().block_timestamp());
-            assert!(presale.start_time < self.env().block_timestamp());
+            assert!(presale.end_time <= self.env().block_timestamp());
+            assert!(presale.start_time >= self.env().block_timestamp());
             assert!(presale.amount >= charge + amount);
-            let _ret = pay_erc20.transfer_from(self.env().caller(),self.env().account_id(),amount);
+            let _ret = erc20.transfer_from(self.env().caller(),self.env().account_id(),amount);
             self.presale_charge.insert(id,charge + amount);
             let reward_amount = presale.price_presale * amount;
             // let _ret = pay_erc20.transfer(self.env().caller(),reward_amount);
-            let  user_charge = self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
-            let  user_reward = self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
+            let mut user_charge = self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
+            let mut user_reward = self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
             self.user_charge.insert((self.env().caller(),id),user_charge + amount);
             self.user_reward.insert((self.env().caller(),id),user_reward + reward_amount);
             true
         }
-        /**
-             @notice
-             Extract locked token
-             @param index the id of lock
-              */
-        #[ink(message)]
-        pub fn claim(
-            &mut self,
-            id:u128,
-        ) ->bool {
-            let presale = self.get_presale(id);
-            if presale.token == AccountId::default() {return  false }
-            assert!(presale.end_time < self.env().block_timestamp());
-            assert!(self.state(id) == true);
-            let user_reward = self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
-            let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.pay_token);
-            let _ret = erc20.transfer(self.env().caller(),user_reward);
-            true
-        }
-        #[ink(message)]
-        pub fn state(&self,id:u128) -> bool {
-            let presale = self.get_presale(id);
-            let charge = self.get_presale_charge(id);
-            if presale.soft_cap < charge {
-                return true
-            }
-            return false
-        }
+
         /**
           @notice
           Get all presale
@@ -255,16 +229,6 @@ mod launchpad {
         fn get_presale_charge_works() {
             let  mp = Launchpad::new();
             assert!(mp.get_presale_charge(0) == 0);
-        }
-        #[ink::test]
-        fn claim_works() {
-            let mut  mp = Launchpad::new();
-            assert!(mp.claim(0) == false);
-        }
-        #[ink::test]
-        fn state_works() {
-            let  mp = Launchpad::new();
-            assert!(mp.state(0) == false);
         }
     }
 }
