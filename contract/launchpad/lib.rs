@@ -22,7 +22,7 @@ mod launchpad {
     derive(scale_info::TypeInfo, ink_storage::traits::StorageLayout)
     )]
     /**
-    @member owner creater of locking
+    @member owner creater of presale
     @member start_time Presale start time
     @member end_time Presale end time
     @member soft_cap Presale soft top
@@ -118,7 +118,8 @@ mod launchpad {
             let mut pay_erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.token);
             assert!(presale.end_time > self.env().block_timestamp());
             assert!(presale.start_time < self.env().block_timestamp());
-            assert!(presale.amount >= charge + amount);
+            assert!(presale.minimum_purchase < amount);
+            assert!(presale.maximum_purchase > amount);
             let _ret = pay_erc20.transfer_from(self.env().caller(),self.env().account_id(),amount);
             self.presale_charge.insert(id,charge + amount);
             let reward_amount = presale.price_presale * amount;
@@ -143,10 +144,17 @@ mod launchpad {
             if presale.token == AccountId::default() {return  false }
             assert!(presale.end_time < self.env().block_timestamp());
             assert!(self.state(id) == true);
-            let user_reward = self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
-            let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.pay_token);
+            let user_reward = self.get_reward(id);
+            let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.token);
             let _ret = erc20.transfer(self.env().caller(),user_reward);
             true
+        }
+        #[ink(message)]
+        pub fn get_reward(
+            &self,
+            id:u128
+        )->u128{
+            self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone()
         }
         #[ink(message)]
         pub fn state(&self,id:u128) -> bool {
@@ -265,6 +273,11 @@ mod launchpad {
         fn state_works() {
             let  mp = Launchpad::new();
             assert!(mp.state(0) == false);
+        }
+        #[ink::test]
+        fn get_reward_works() {
+            let  mp = Launchpad::new();
+            assert!(mp.get_reward(0) == 0);
         }
     }
 }

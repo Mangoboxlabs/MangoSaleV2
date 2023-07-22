@@ -22,16 +22,14 @@ mod fair_launchpad {
     derive(scale_info::TypeInfo, ink_storage::traits::StorageLayout)
     )]
     /**
-    @member owner creater of locking
+    @member owner creater of presale
     @member start_time Presale start time
     @member end_time Presale end time
     @member soft_cap Presale soft top
-    @member hard_cap Presale hard top
     @member token contract of Presale
     @member pay_token pay of Presale
     @member minimum_purchase Minimum purchase quantity
     @member maximum_purchase maximum purchase quantity
-    @member price_presale presale price
     @member project_info the information of project
     @member amount the amount of presale
      */
@@ -41,12 +39,10 @@ mod fair_launchpad {
         start_time:u64,
         end_time: u64,
         soft_cap: u128,
-        hard_cap: u128,
         token: AccountId,
         pay_token: AccountId,
         minimum_purchase:u128,
         maximum_purchase:u128,
-        price_presale:u128,
         project_info:String,
         amount:u128,
     }
@@ -57,8 +53,7 @@ mod fair_launchpad {
         presale_charge:StorageHashMap<u128, u128>,
         every_presale:StorageHashMap<u128, PresaleDetail>,
         user_charge:StorageHashMap<(AccountId,u128), u128>,
-        user_reward:StorageHashMap<(AccountId,u128), u128>,
-
+        all_charge:StorageHashMap<u128, u128>,
     }
     impl Default for FairLaunchpad {
         fn default() -> Self {
@@ -74,7 +69,7 @@ mod fair_launchpad {
                 presale_charge:StorageHashMap::new(),
                 every_presale:StorageHashMap::new(),
                 user_charge:StorageHashMap::new(),
-                user_reward:StorageHashMap::new(),
+                all_charge:StorageHashMap::new(),
                 all_presales:Vec::new()
             }
         }
@@ -104,7 +99,8 @@ mod fair_launchpad {
         /**
         @notice
         Extract locked token
-        @param index the id of lock
+        @param id the id of presale
+        @param amount the amount of presale
          */
         #[ink(message)]
         pub fn buy(
@@ -115,22 +111,59 @@ mod fair_launchpad {
             let charge = self.presale_charge.get(&id).unwrap_or(&0).clone();
             let presale = self.get_presale(id);
             if presale.token == AccountId::default() {return  false }
-            let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.pay_token);
-            let mut pay_erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.token);
+            let mut pay_erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.pay_token);
             assert!(presale.end_time <= self.env().block_timestamp());
             assert!(presale.start_time >= self.env().block_timestamp());
-            assert!(presale.amount >= charge + amount);
-            let _ret = erc20.transfer_from(self.env().caller(),self.env().account_id(),amount);
+            assert!(presale.minimum_purchase < amount);
+            assert!(presale.maximum_purchase > amount);
+            let _ret = pay_erc20.transfer_from(self.env().caller(),self.env().account_id(),amount);
             self.presale_charge.insert(id,charge + amount);
-            let reward_amount = presale.price_presale * amount;
-            // let _ret = pay_erc20.transfer(self.env().caller(),reward_amount);
-            let mut user_charge = self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
-            let mut user_reward = self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
+            let  user_charge = self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
+            let  all_charge = self.all_charge.get(&id).unwrap_or(&0).clone();
             self.user_charge.insert((self.env().caller(),id),user_charge + amount);
-            self.user_reward.insert((self.env().caller(),id),user_reward + reward_amount);
+            self.all_charge.insert(id,all_charge + amount);
             true
         }
-
+        /**
+          @notice
+          Extract locked token
+          @param index the id of lock
+           */
+        #[ink(message)]
+        pub fn claim(
+            &mut self,
+            id:u128,
+        ) ->bool {
+            let presale = self.get_presale(id);
+            if presale.token == AccountId::default() {return  false }
+            assert!(presale.end_time < self.env().block_timestamp());
+            assert!(self.state(id) == true);
+            let user_reward = self.get_reward(id);
+            let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.token);
+            let _ret = erc20.transfer(self.env().caller(),user_reward);
+            true
+        }
+        #[ink(message)]
+        pub fn get_reward(
+            &self,
+            id:u128
+        )->u128{
+            let presale = self.get_presale(id);
+            let user_charge = self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
+            if user_charge == 0 { return  0 }
+            let all_charge = self.all_charge.get(&id).unwrap_or(&0).clone();
+            let user_reward = user_charge / all_charge * presale.amount;
+            user_reward
+        }
+        #[ink(message)]
+        pub fn state(&self,id:u128) -> bool {
+            let presale = self.get_presale(id);
+            let charge = self.get_presale_charge(id);
+            if presale.soft_cap < charge {
+                return true
+            }
+            return false
+        }
         /**
           @notice
           Get all presale
@@ -159,12 +192,10 @@ mod fair_launchpad {
                 start_time:0,
                 end_time:0,
                 soft_cap:0,
-                hard_cap:0,
                 token: AccountId::default(),
                 pay_token: AccountId::default(),
                 minimum_purchase:0,
                 maximum_purchase:0,
-                price_presale:0,
                 project_info:String::from("test"),
                 amount:0
             };
@@ -187,24 +218,22 @@ mod fair_launchpad {
         use ink_lang as ink;
         #[ink::test]
         fn buy_works() {
-            let mut mp = Launchpad::new();
+            let mut mp = FairLaunchpad::new();
             assert!(mp.buy(1,1) == false);
         }
         #[ink::test]
         fn create_works() {
-            let mut mp = Launchpad::new();
+            let mut mp = FairLaunchpad::new();
             let default_pre = PresaleDetail {
                 id:0,
                 owner:AccountId::default(),
                 start_time:0,
                 end_time:0,
                 soft_cap:0,
-                hard_cap:0,
                 token: AccountId::default(),
                 pay_token: AccountId::default(),
                 minimum_purchase:0,
                 maximum_purchase:0,
-                price_presale:0,
                 project_info:String::from("test"),
                 amount:0
             };
@@ -212,23 +241,38 @@ mod fair_launchpad {
         }
         #[ink::test]
         fn get_all_presale_works() {
-            let  mp = Launchpad::new();
+            let  mp = FairLaunchpad::new();
             assert!(mp.get_all_presale().len() == 0);
         }
         #[ink::test]
         fn get_user_presale_works() {
-            let  mp = Launchpad::new();
+            let  mp = FairLaunchpad::new();
             assert!(mp.get_user_presale().len() == 0);
         }
         #[ink::test]
         fn get_presale_works() {
-            let  mp = Launchpad::new();
+            let  mp = FairLaunchpad::new();
             assert!(mp.get_presale(0).id == 0);
         }
         #[ink::test]
         fn get_presale_charge_works() {
-            let  mp = Launchpad::new();
+            let  mp = FairLaunchpad::new();
             assert!(mp.get_presale_charge(0) == 0);
+        }
+        #[ink::test]
+        fn claim_works() {
+            let mut  mp = FairLaunchpad::new();
+            assert!(mp.claim(0) == false);
+        }
+        #[ink::test]
+        fn state_works() {
+            let  mp = FairLaunchpad::new();
+            assert!(mp.state(0) == false);
+        }
+        #[ink::test]
+        fn get_reward_works() {
+            let  mp = FairLaunchpad::new();
+            assert!(mp.get_reward(0) == 0);
         }
     }
 }
