@@ -53,6 +53,7 @@ mod fair_launchpad {
         presale_charge:StorageHashMap<u128, u128>,
         every_presale:StorageHashMap<u128, PresaleDetail>,
         user_charge:StorageHashMap<(AccountId,u128), u128>,
+        user_claim:StorageHashMap<(AccountId,u128), bool>,
         all_charge:StorageHashMap<u128, u128>,
     }
     impl Default for FairLaunchpad {
@@ -70,6 +71,7 @@ mod fair_launchpad {
                 every_presale:StorageHashMap::new(),
                 user_charge:StorageHashMap::new(),
                 all_charge:StorageHashMap::new(),
+                user_claim:StorageHashMap::new(),
                 all_presales:Vec::new()
             }
         }
@@ -98,7 +100,7 @@ mod fair_launchpad {
         }
         /**
         @notice
-        Extract locked token
+        buy by presale
         @param id the id of presale
         @param amount the amount of presale
          */
@@ -127,7 +129,7 @@ mod fair_launchpad {
         /**
           @notice
           Extract locked token
-          @param index the id of lock
+          @param id the id of presale
            */
         #[ink(message)]
         pub fn claim(
@@ -141,13 +143,21 @@ mod fair_launchpad {
             let user_reward = self.get_reward(id);
             let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.token);
             let _ret = erc20.transfer(self.env().caller(),user_reward);
+            self.user_claim.insert((self.env().caller(),id),true);
             true
         }
+        /**
+       @notice
+       Get the user reward by id
+       @param id the id of presale
+        */
         #[ink(message)]
         pub fn get_reward(
             &self,
             id:u128
         )->u128{
+            let  claimed = self.user_claim.get(&(self.env().caller(),id)).unwrap_or(&false).clone();
+            if claimed { return  0}
             let presale = self.get_presale(id);
             let user_charge = self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
             if user_charge == 0 { return  0 }
@@ -155,6 +165,11 @@ mod fair_launchpad {
             let user_reward = user_charge / all_charge * presale.amount;
             user_reward
         }
+        /**
+         @notice
+         Get the state  by id
+         @param id the id of presale
+      */
         #[ink(message)]
         pub fn state(&self,id:u128) -> bool {
             let presale = self.get_presale(id);

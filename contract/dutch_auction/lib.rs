@@ -4,7 +4,7 @@ use ink_lang as ink;
 #[allow(unused_imports)]
 #[allow(renamed_and_removed_lints)]
 #[ink::contract]
-mod launchpad {
+mod dutch_auction {
     use erc20::Erc20;
     use core::convert::TryInto;
     use alloc::string::String;
@@ -31,7 +31,6 @@ mod launchpad {
     @member pay_token pay of Presale
     @member minimum_purchase Minimum purchase quantity
     @member maximum_purchase maximum purchase quantity
-    @member price_presale presale price
     @member project_info the information of project
     @member amount the amount of presale
      */
@@ -41,31 +40,35 @@ mod launchpad {
         start_time:u64,
         end_time: u64,
         soft_cap: u128,
-        hard_cap: u128,
+        hard_cap:u128,
+        start_price:u128,
+        end_price:u128,
+        decrease_price_cycle:u128,
         token: AccountId,
         pay_token: AccountId,
         minimum_purchase:u128,
         maximum_purchase:u128,
-        price_presale:u128,
         project_info:String,
         amount:u128,
+
     }
     #[ink(storage)]
-    pub struct Launchpad {
+    pub struct DutchAuction {
         user_presales: StorageHashMap<AccountId, Vec<PresaleDetail>>,
         all_presales : Vec<PresaleDetail>,
         presale_charge:StorageHashMap<u128, u128>,
         every_presale:StorageHashMap<u128, PresaleDetail>,
         user_charge:StorageHashMap<(AccountId,u128), u128>,
+        all_charge:StorageHashMap<u128, u128>,
         user_reward:StorageHashMap<(AccountId,u128), u128>,
     }
-    impl Default for Launchpad {
+    impl Default for DutchAuction {
         fn default() -> Self {
             Self::new()
         }
     }
 
-    impl Launchpad {
+    impl DutchAuction {
         #[ink(constructor)]
         pub fn new() -> Self {
             Self {
@@ -73,6 +76,7 @@ mod launchpad {
                 presale_charge:StorageHashMap::new(),
                 every_presale:StorageHashMap::new(),
                 user_charge:StorageHashMap::new(),
+                all_charge:StorageHashMap::new(),
                 user_reward:StorageHashMap::new(),
                 all_presales:Vec::new()
             }
@@ -87,6 +91,7 @@ mod launchpad {
             &mut self,
             info: PresaleDetail
         ) -> bool {
+            assert!(info.start_price > info.end_price);
             let mut data = info.clone();
             if data.token == AccountId::default() {return  false }
             let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(data.token);
@@ -104,7 +109,7 @@ mod launchpad {
         @notice
         buy by presale
         @param id the id of presale
-        @param amount the amount of buy
+        @param amount the amount of presale
          */
         #[ink(message)]
         pub fn buy(
@@ -112,30 +117,31 @@ mod launchpad {
             id:u128,
             amount:u128
         ) ->bool {
-            let charge = self.get_presale_charge(id);
+            let charge = self.presale_charge.get(&id).unwrap_or(&0).clone();
             let presale = self.get_presale(id);
             if presale.token == AccountId::default() {return  false }
-            // let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.pay_token);
-            let mut pay_erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.token);
-            assert!(presale.end_time > self.env().block_timestamp());
-            assert!(presale.start_time < self.env().block_timestamp());
+            let mut pay_erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.pay_token);
+            assert!(presale.end_time <= self.env().block_timestamp());
+            assert!(presale.start_time >= self.env().block_timestamp());
             assert!(presale.minimum_purchase < amount);
             assert!(presale.maximum_purchase > amount);
             let _ret = pay_erc20.transfer_from(self.env().caller(),self.env().account_id(),amount);
             self.presale_charge.insert(id,charge + amount);
-            let reward_amount = presale.price_presale * amount;
-            // let _ret = pay_erc20.transfer(self.env().caller(),reward_amount);
             let  user_charge = self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
-            let  user_reward = self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
+            let  all_charge = self.all_charge.get(&id).unwrap_or(&0).clone();
             self.user_charge.insert((self.env().caller(),id),user_charge + amount);
-            self.user_reward.insert((self.env().caller(),id),user_reward + reward_amount);
+            self.all_charge.insert(id,all_charge + amount);
+            let current_price = self.get_current_price(id);
+            let can_reward = amount * current_price;
+            let  user_reward = self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
+            self.user_reward.insert((self.env().caller(),id),user_reward + can_reward);
             true
         }
         /**
-         @notice
-         Extract locked token
-         @param id the id of presale
-          */
+          @notice
+          Extract locked token
+          @param id the id of presale
+           */
         #[ink(message)]
         pub fn claim(
             &mut self,
@@ -152,10 +158,28 @@ mod launchpad {
             true
         }
         /**
-        @notice
-        Get the user reward by id
-        @param id the id of presale
-         */
+          @notice
+          Get the price  by id
+          @param id the id of presale
+       */
+        #[ink(message)]
+        pub fn get_current_price(
+            &self,
+            id:u128
+        ) -> u128 {
+            let presale = self.get_presale(id);
+            let diff_price = presale.start_price - presale.end_price;
+            let diff_time = presale.end_time - presale.start_time;
+            let diff_cycle = presale.decrease_price_cycle * diff_price / diff_time;
+            let decrease_cycle = (self.env().block_timestamp() - presale.start_time) / presale.decrease_price_cycle;
+            let current_price = decrease_cycle * diff_cycle;
+            current_price
+        }
+        /**
+       @notice
+       Get the user reward by id
+       @param id the id of presale
+        */
         #[ink(message)]
         pub fn get_reward(
             &self,
@@ -164,10 +188,10 @@ mod launchpad {
             self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone()
         }
         /**
-       @notice
-       Get the state  by id
-       @param id the id of presale
-        */
+         @notice
+         Get the state  by id
+         @param id the id of presale
+      */
         #[ink(message)]
         pub fn state(&self,id:u128) -> bool {
             let presale = self.get_presale(id);
@@ -205,12 +229,14 @@ mod launchpad {
                 start_time:0,
                 end_time:0,
                 soft_cap:0,
-                hard_cap:0,
+                hard_cap:u128,
+                start_price:u128,
+                end_price:u128,
+                decrease_price_cycle:u128,
                 token: AccountId::default(),
                 pay_token: AccountId::default(),
                 minimum_purchase:0,
                 maximum_purchase:0,
-                price_presale:0,
                 project_info:String::from("test"),
                 amount:0
             };
@@ -233,24 +259,22 @@ mod launchpad {
         use ink_lang as ink;
         #[ink::test]
         fn buy_works() {
-            let mut mp = Launchpad::new();
+            let mut mp = FairLaunchpad::new();
             assert!(mp.buy(1,1) == false);
         }
         #[ink::test]
         fn create_works() {
-            let mut mp = Launchpad::new();
+            let mut mp = FairLaunchpad::new();
             let default_pre = PresaleDetail {
                 id:0,
                 owner:AccountId::default(),
                 start_time:0,
                 end_time:0,
                 soft_cap:0,
-                hard_cap:0,
                 token: AccountId::default(),
                 pay_token: AccountId::default(),
                 minimum_purchase:0,
                 maximum_purchase:0,
-                price_presale:0,
                 project_info:String::from("test"),
                 amount:0
             };
@@ -258,37 +282,37 @@ mod launchpad {
         }
         #[ink::test]
         fn get_all_presale_works() {
-            let  mp = Launchpad::new();
+            let  mp = FairLaunchpad::new();
             assert!(mp.get_all_presale().len() == 0);
         }
         #[ink::test]
         fn get_user_presale_works() {
-            let  mp = Launchpad::new();
+            let  mp = FairLaunchpad::new();
             assert!(mp.get_user_presale().len() == 0);
         }
         #[ink::test]
         fn get_presale_works() {
-            let  mp = Launchpad::new();
+            let  mp = FairLaunchpad::new();
             assert!(mp.get_presale(0).id == 0);
         }
         #[ink::test]
         fn get_presale_charge_works() {
-            let  mp = Launchpad::new();
+            let  mp = FairLaunchpad::new();
             assert!(mp.get_presale_charge(0) == 0);
         }
         #[ink::test]
         fn claim_works() {
-            let mut  mp = Launchpad::new();
+            let mut  mp = FairLaunchpad::new();
             assert!(mp.claim(0) == false);
         }
         #[ink::test]
         fn state_works() {
-            let  mp = Launchpad::new();
+            let  mp = FairLaunchpad::new();
             assert!(mp.state(0) == false);
         }
         #[ink::test]
         fn get_reward_works() {
-            let  mp = Launchpad::new();
+            let  mp = FairLaunchpad::new();
             assert!(mp.get_reward(0) == 0);
         }
     }
