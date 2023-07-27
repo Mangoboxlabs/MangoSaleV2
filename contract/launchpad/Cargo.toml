@@ -19,10 +19,7 @@ erc20 = { version = "0.1.0", path = "../erc20", default-features = false, featur
 [lib]
 name = "launchpad"
 path = "lib.rs"
-crate-type = [
-    # Used for normal contract Wasm blobs.
-    "cdylib",
-]
+crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["std"]

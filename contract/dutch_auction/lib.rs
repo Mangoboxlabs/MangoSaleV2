@@ -168,10 +168,11 @@ mod dutch_auction {
             id:u128
         ) -> u128 {
             let presale = self.get_presale(id);
+            if presale.token == AccountId::default() {return 0}
             let diff_price = presale.start_price - presale.end_price;
             let diff_time = presale.end_time - presale.start_time;
-            let diff_cycle = presale.decrease_price_cycle * diff_price / diff_time;
-            let decrease_cycle = (self.env().block_timestamp() - presale.start_time) / presale.decrease_price_cycle;
+            let diff_cycle = presale.decrease_price_cycle * diff_price / diff_time as u128;
+            let decrease_cycle = (self.env().block_timestamp() - presale.start_time) as u128 / presale.decrease_price_cycle;
             let current_price = decrease_cycle * diff_cycle;
             current_price
         }
@@ -229,10 +230,10 @@ mod dutch_auction {
                 start_time:0,
                 end_time:0,
                 soft_cap:0,
-                hard_cap:u128,
-                start_price:u128,
-                end_price:u128,
-                decrease_price_cycle:u128,
+                hard_cap:0,
+                start_price:0,
+                end_price:0,
+                decrease_price_cycle:0,
                 token: AccountId::default(),
                 pay_token: AccountId::default(),
                 minimum_purchase:0,
@@ -259,18 +260,22 @@ mod dutch_auction {
         use ink_lang as ink;
         #[ink::test]
         fn buy_works() {
-            let mut mp = FairLaunchpad::new();
+            let mut mp = DutchAuction::new();
             assert!(mp.buy(1,1) == false);
         }
         #[ink::test]
         fn create_works() {
-            let mut mp = FairLaunchpad::new();
+            let mut mp = DutchAuction::new();
             let default_pre = PresaleDetail {
                 id:0,
                 owner:AccountId::default(),
                 start_time:0,
                 end_time:0,
                 soft_cap:0,
+                hard_cap:0,
+                start_price:1,
+                end_price:0,
+                decrease_price_cycle:0,
                 token: AccountId::default(),
                 pay_token: AccountId::default(),
                 minimum_purchase:0,
@@ -282,38 +287,43 @@ mod dutch_auction {
         }
         #[ink::test]
         fn get_all_presale_works() {
-            let  mp = FairLaunchpad::new();
+            let  mp = DutchAuction::new();
             assert!(mp.get_all_presale().len() == 0);
         }
         #[ink::test]
         fn get_user_presale_works() {
-            let  mp = FairLaunchpad::new();
+            let  mp = DutchAuction::new();
             assert!(mp.get_user_presale().len() == 0);
         }
         #[ink::test]
         fn get_presale_works() {
-            let  mp = FairLaunchpad::new();
+            let  mp = DutchAuction::new();
             assert!(mp.get_presale(0).id == 0);
         }
         #[ink::test]
         fn get_presale_charge_works() {
-            let  mp = FairLaunchpad::new();
+            let  mp = DutchAuction::new();
             assert!(mp.get_presale_charge(0) == 0);
         }
         #[ink::test]
         fn claim_works() {
-            let mut  mp = FairLaunchpad::new();
+            let mut  mp = DutchAuction::new();
             assert!(mp.claim(0) == false);
         }
         #[ink::test]
         fn state_works() {
-            let  mp = FairLaunchpad::new();
+            let  mp = DutchAuction::new();
             assert!(mp.state(0) == false);
         }
         #[ink::test]
         fn get_reward_works() {
-            let  mp = FairLaunchpad::new();
+            let  mp = DutchAuction::new();
             assert!(mp.get_reward(0) == 0);
+        }
+        #[ink::test]
+        fn get_current_price_works() {
+            let  mp = DutchAuction::new();
+            assert!(mp.get_current_price(0) == 0);
         }
     }
 }
