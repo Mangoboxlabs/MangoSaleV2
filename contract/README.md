@@ -76,9 +76,9 @@ mv artifacts/substrate-contracts-node-linux/substrate-contracts-node ./
 visit [contracts UI](https://weightv1--contracts-ui.netlify.app/), and connect local node(ws://127.0.0.1:9944).
 
 #### Contract deployment steps
-erc20 > launchpad > fair_launchpad > dutch_auction
+token_factory > launchpad > fair_launchpad > dutch_auction
 
-The erc20 contract needs to be deployed twice, one for payment of fees and the other for presale tokens.
+You need to use a token_factory creates two erc20 tokens, one for payment of fees and the other for presale tokens.
 ## Building
 
 To build the WASM of your contract and metadata, You can enter any folder and enter the following command.
