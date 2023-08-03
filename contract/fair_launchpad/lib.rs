@@ -114,8 +114,8 @@ mod fair_launchpad {
             let presale = self.get_presale(id);
             if presale.token == AccountId::default() {return  false }
             let mut pay_erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.pay_token);
-            assert!(presale.end_time <= self.env().block_timestamp());
-            assert!(presale.start_time >= self.env().block_timestamp());
+            assert!(presale.end_time > self.env().block_timestamp());
+            assert!(presale.start_time < self.env().block_timestamp());
             assert!(presale.minimum_purchase < amount);
             assert!(presale.maximum_purchase > amount);
             let _ret = pay_erc20.transfer_from(self.env().caller(),self.env().account_id(),amount);
