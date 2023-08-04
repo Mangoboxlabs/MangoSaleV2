@@ -1,239 +1,164 @@
-import getContract from '@/abi/index.js';
+/* eslint-disable */
+import connectContract from "@/api/connectContract"
+import {formatResult} from "@/utils/formatUtils"
+import Accounts from "@/api/Account.js";
 
-function judgeToken(rootState, address) {
-  state.token = getContract.getContractByToken('erc20', address, rootState.app.web3);
+import {dealResult,reportErr} from "@/utils/dealResult"
+const value = 0;
+const queryGasLimit = -1;
+const gasLimit = 3000n * 100000000n;
+const storageDepositLimit = null;
+
+
+async function judgeContract(web3,address) {
+    state.contract = await connectContract(web3, 'token',address)
 }
 
-const state = {};
+const state = {
+    contract: null
+}
 const mutations = {};
 const actions = {
-  allowance({ rootState }, { owner, address, spender }) {
-    judgeToken(rootState, address);
-    return new Promise((resolve, reject) => {
-      state.token.methods
-        .allowance(owner, spender)
-        .call()
-        .then((res) => {
-          resolve(res);
-        })
-        .catch((err) => {
-          reject(err);
+    async queryInfo({rootState},address) {
+        await judgeContract(rootState.app.web3,address)
+        const AccountId = await Accounts.accountAddress();
+        let data = await state.contract.query.queryInfo(AccountId, {value, queryGasLimit},)
+        data = formatResult(data);
+        return data
+
+    },
+    async setConfigure({rootState}, {burn_tax, marketing_tax, marketing_address, transfer_limit, wallet_limit,address}) {
+        await judgeContract(rootState.app.web3)
+        const injector = await Accounts.accountInjector();
+        const AccountId = await Accounts.accountAddress();
+        const timeMemory = new Date().getTime()
+        window.messageBox.push(timeMemory)
+        await state.contract.tx.setConfigure({storageDepositLimit, gasLimit},
+            //params
+            burn_tax, marketing_tax, marketing_address, transfer_limit, wallet_limit
+        ).signAndSend(AccountId, {signer: injector.signer}, result => {
+            dealResult(result, rootState.app.web3, state.contract, "set")
+
+        }).catch(err=>{
+            reportErr(err)
         });
-    });
-  },
-  approve({ rootState }, { spender, address, amount }) {
-    judgeToken(rootState, address);
-    return new Promise((resolve, reject) => {
-      state.token.methods
-        .approve(spender, amount)
-        .estimateGas({
-          from: rootState.app.account,
-        })
-        .then((gas) => {
-          state.token.methods
-            .approve(spender, amount)
-            .send({
-              from: rootState.app.account,
-              gas: parseInt(gas * 1.2),
-            })
-            .then((tx) => {
-              let loop = 1;
-              let internalId = setInterval(() => {
-                let receipt = rootState.app.web3.eth.getTransactionReceipt(tx.transactionHash);
-                if (loop++ > 600) {
-                  clearInterval(internalId);
-                  reject(tx);
-                  return;
-                }
-                if (!receipt) {
-                  return;
-                }
-                clearInterval(internalId);
-                if (receipt.status == 0) {
-                  reject(tx);
-                } else {
-                  resolve(tx);
-                }
-              }, 1000);
-            }).catch((err) => {
-            reject(err);
-          });
-        })
-        .catch((err) => {
-          reject(err);
+
+    },
+    async get_configure({rootState}) {
+        await judgeContract(rootState.app.web3)
+        const AccountId = await Accounts.accountAddress();
+        let data = await state.contract.query.get_configure(AccountId, {value, queryGasLimit},)
+        data = formatResult(data);
+        return data
+
+    },
+    async balanceOf({rootState}, {owner,address}) {
+        await judgeContract(rootState.app.web3,address)
+        const AccountId = await Accounts.accountAddress();
+        let data = await state.contract.query.balanceOf(AccountId, {value, queryGasLimit}, owner)
+        data = formatResult(data);
+        return data
+
+    },
+    async allowance({rootState}, {owner, spender,address}) {
+        await judgeContract(rootState.app.web3,address)
+        const AccountId = await Accounts.accountAddress();
+        let data = await state.contract.query.allowance(AccountId, {value, queryGasLimit}, owner, spender)
+        data = formatResult(data);
+        return data
+
+    },
+    async transfer({rootState}, to, value) {
+        await judgeContract(rootState.app.web3)
+        const injector = await Accounts.accountInjector();
+        const AccountId = await Accounts.accountAddress();
+        const timeMemory = new Date().getTime()
+        window.messageBox.push(timeMemory)
+        await state.contract.tx.transfer({storageDepositLimit, gasLimit},
+            //params
+            to, value
+        ).signAndSend(AccountId, {signer: injector.signer}, result => {
+            if (result.status.isInBlock) {
+                console.log('in a block');
+            } else if (result.status.isFinalized) {
+                console.log('finalized');
+            }
         });
-    });
-  },
-  balanceOf({ rootState }, { account, address }) {
-    judgeToken(rootState, address);
-    return new Promise((resolve, reject) => {
-      state.token.methods
-        .balanceOf(account)
-        .call()
-        .then((res) => {
-          resolve(res);
-        })
-        .catch((err) => {
-          reject(JSON.parse(err.message.substr(24, err.message.length)).message);
+
+    },
+    async approve({rootState}, {spender, value,address}) {
+
+        await judgeContract(rootState.app.web3,address)
+        const injector = await Accounts.accountInjector();
+        const AccountId = await Accounts.accountAddress();
+        const timeMemory = new Date().getTime()
+        window.messageBox.push(timeMemory)
+        await state.contract.tx.approve({storageDepositLimit, gasLimit},
+            //params
+            spender, value
+        ).signAndSend(AccountId, {signer: injector.signer}, result => {
+            dealResult(result, rootState.app.web3, state.contract, "approve")
+
+        }).catch(err=>{
+            reportErr(err)
         });
-    });
-  },
-  decimals({ rootState }, { address }) {
-    judgeToken(rootState, address);
-    return new Promise((resolve, reject) => {
-      state.token.methods
-        .decimals()
-        .call()
-        .then((res) => {
-          resolve(res);
-        })
-        .catch((err) => {
-          reject(JSON.parse(err.message.substr(24, err.message.length)).message);
+    },
+    async transfer_from({rootState}, from, to, value) {
+        await judgeContract(rootState.app.web3)
+        const injector = await Accounts.accountInjector();
+        const AccountId = await Accounts.accountAddress();
+        const timeMemory = new Date().getTime()
+        window.messageBox.push(timeMemory)
+        await state.contract.tx.transfer_from({storageDepositLimit, gasLimit},
+            //params
+            from, to, value
+        ).signAndSend(AccountId, {signer: injector.signer}, result => {
+            if (result.status.isInBlock) {
+                console.log('in a block');
+            } else if (result.status.isFinalized) {
+                console.log('finalized');
+            }
         });
-    });
-  },
-  decreaseAllowance({ rootState }, { spender, subtractedValue }) {
-    judgeToken(rootState);
-    return new Promise((resolve, reject) => {
-      state.token.methods
-        .decreaseAllowance(spender, subtractedValue)
-        .estimateGas({
-          from: rootState.app.account,
-        })
-        .then((gas) => {
-          state.token.methods
-            .decreaseAllowance(spender, subtractedValue)
-            .send({
-              from: rootState.app.account,
-              gas: parseInt(gas * 1.2),
-            })
-            .then((res) => {
-              resolve(res);
-            });
-        })
-        .catch((err) => {
-          reject(JSON.parse(err.message.substr(24, err.message.length)).message);
+
+    },
+    async get_current_votes({rootState}, user) {
+        await judgeContract(rootState.app.web3)
+        const AccountId = await Accounts.accountAddress();
+        let data = await state.contract.query.get_current_votes(AccountId, {value, queryGasLimit}, user)
+        data = formatResult(data);
+        return data
+
+    },
+    async get_prior_votes({rootState}, account, block_number) {
+        await judgeContract(rootState.app.web3)
+        const AccountId = await Accounts.accountAddress();
+        let data = await state.contract.query.get_prior_votes(AccountId, {value, queryGasLimit}, account, block_number)
+        data = formatResult(data);
+        return data
+
+    },
+    async delegate({rootState}, delegatee) {
+        await judgeContract(rootState.app.web3)
+        const injector = await Accounts.accountInjector();
+        const AccountId = await Accounts.accountAddress();
+        const timeMemory = new Date().getTime()
+        window.messageBox.push(timeMemory)
+        await state.contract.tx.delegate({storageDepositLimit, gasLimit},
+            //params
+            delegatee
+        ).signAndSend(AccountId, {signer: injector.signer}, result => {
+            if (result.status.isInBlock) {
+                console.log('in a block');
+            } else if (result.status.isFinalized) {
+                console.log('finalized');
+            }
         });
-    });
-  },
-  increaseAllowance({ rootState }, { spender, addedValue }) {
-    judgeToken(rootState);
-    return new Promise((resolve, reject) => {
-      state.token.methods
-        .increaseAllowance(spender, addedValue)
-        .estimateGas({
-          from: rootState.app.account,
-        })
-        .then((gas) => {
-          state.token.methods
-            .increaseAllowance(spender, addedValue)
-            .send({
-              from: rootState.app.account,
-              gas: parseInt(gas * 1.2),
-            })
-            .then((res) => {
-              resolve(res);
-            });
-        })
-        .catch((err) => {
-          reject(JSON.parse(err.message.substr(24, err.message.length)).message);
-        });
-    });
-  },
-  name({ rootState }) {
-    judgeToken(rootState);
-    return new Promise((resolve, reject) => {
-      state.token.methods
-        .name()
-        .call()
-        .then((res) => {
-          resolve(res);
-        })
-        .catch((err) => {
-          reject(JSON.parse(err.message.substr(24, err.message.length)).message);
-        });
-    });
-  },
-  symbol({ rootState }) {
-    judgeToken(rootState);
-    return new Promise((resolve, reject) => {
-      state.token.methods
-        .symbol()
-        .call()
-        .then((res) => {
-          resolve(res);
-        })
-        .catch((err) => {
-          reject(JSON.parse(err.message.substr(24, err.message.length)).message);
-        });
-    });
-  },
-  totalSupply({ rootState }) {
-    judgeToken(rootState);
-    return new Promise((resolve, reject) => {
-      state.token.methods
-        .totalSupply()
-        .call()
-        .then((res) => {
-          resolve(res);
-        })
-        .catch((err) => {
-          reject(JSON.parse(err.message.substr(24, err.message.length)).message);
-        });
-    });
-  },
-  transfer({ rootState }, { recipient, amount }) {
-    judgeToken(rootState);
-    return new Promise((resolve, reject) => {
-      state.token.methods
-        .transfer(recipient, amount)
-        .estimateGas({
-          from: rootState.app.account,
-        })
-        .then((gas) => {
-          state.token.methods
-            .transfer(recipient, amount)
-            .send({
-              from: rootState.app.account,
-              gas: parseInt(gas * 1.2),
-            })
-            .then((res) => {
-              resolve(res);
-            });
-        })
-        .catch((err) => {
-          reject(JSON.parse(err.message.substr(24, err.message.length)).message);
-        });
-    });
-  },
-  transferFrom({ rootState }, { sender, recipient, amount }) {
-    judgeToken(rootState);
-    return new Promise((resolve, reject) => {
-      state.token.methods
-        .transferFrom(sender, recipient, amount)
-        .estimateGas({
-          from: rootState.app.account,
-        })
-        .then((gas) => {
-          state.token.methods
-            .transferFrom(sender, recipient, amount)
-            .send({
-              from: rootState.app.account,
-              gas: parseInt(gas * 1.2),
-            })
-            .then((res) => {
-              resolve(res);
-            });
-        })
-        .catch((err) => {
-          reject(JSON.parse(err.message.substr(24, err.message.length)).message);
-        });
-    });
-  },
-};
+
+    },
+}
 export default {
-  namespaced: true,
-  mutations,
-  state,
-  actions,
-};
+    namespaced: true,
+    mutations,
+    state,
+    actions
+}

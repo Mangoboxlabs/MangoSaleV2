@@ -1,11 +1,7 @@
-import vault from "@/store/modules/abisMethods/vault";
-import TBCStake from "@/store/modules/abisMethods/TBCStake";
-import stake from "@/store/modules/abisMethods/stake";
-import rewardPool from "@/store/modules/abisMethods/rewardPool";
-import erc721 from "@/store/modules/abisMethods/erc721";
+import Launchpad from "@/store/modules/abisMethods/launchpad";
+import FairLaunchpad from "@/store/modules/abisMethods/fair_launchpad";
+import DutchAuction from "@/store/modules/abisMethods/dutch_auction";
 import erc20 from "@/store/modules/abisMethods/erc20";
-import auctionNFT from "@/store/modules/abisMethods/auctionNFT";
-import usdt from "@/store/modules/abisMethods/usdt";
-import stakingProof from "@/store/modules/abisMethods/stakingProof";
+import tokenFactory from "@/store/modules/abisMethods/token_factory";
 
-export default {vault, TBCStake, stake, rewardPool, erc721, erc20, auctionNFT,usdt,stakingProof}
+export default {Launchpad, FairLaunchpad, DutchAuction,tokenFactory,erc20}
