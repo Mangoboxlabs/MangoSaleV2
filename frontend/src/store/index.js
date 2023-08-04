@@ -1,19 +1,21 @@
-import { createStore } from 'vuex'
-import getters from './getters'
-import app from "@/store/modules/app";
-import aboM from "@/store/modules/abisMethods";
+import Vue from 'vue'
+import Vuex from 'vuex'
+import app from "./modules/app";
 
-export default createStore({
+import apiMethods from "./modules/abisMethods"
+Vue.use(Vuex)
+
+export default new Vuex.Store({
   state: {
-    baseUrl:"https://lending.bbbing.co"
   },
-  getters,
+  getters: {
+  },
   mutations: {
   },
-  actions: {},
-
+  actions: {
+  },
   modules: {
     app,
-    ...aboM
+    ...apiMethods
   }
 })

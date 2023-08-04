@@ -1,0 +1,94 @@
+:root {
+  --animate-duration: 300ms !important;
+  --animate-delay: 0.3s !important;
+}
+
+.ant-btn {
+
+  border-radius: 25px;
+  border: none;
+  font-weight: bold;
+
+}
+.ant-btn-dashed{
+  background:none;
+  border: 1px solid #54D500;
+  color: #54D500;
+  &:active, &:hover {
+    background: linear-gradient(225deg, #54D500 0%, #2AAA00 100%);;
+  }
+}
+.ant-btn-dashed:focus, .ant-btn-dashed:hover{
+  background:none;
+  border: 1px solid #54D500;
+  color: #54D500;
+}
+
+.ant-btn-primary{
+  background: linear-gradient(225deg, #54D500 0%, #2AAA00 100%);;
+  &:active, &:hover {
+    background: linear-gradient(225deg, #54D500 0%, #2AAA00 100%);;
+  }
+}
+.ant-btn-primary:focus, .ant-btn-primary:hover{
+  background: linear-gradient(225deg, #54D500 0%, #2AAA00 100%);;
+
+}
+.ant-select {
+  .ant-select-selection {
+    background: #1d2126;
+    border-radius: 10px;
+    border: 1px solid #515151;
+    color: #fff;
+    .ant-select-arrow-icon{
+      svg{
+      }
+    }
+  }
+}
+.ant-input{
+  background: #0D1319;
+  border-radius: 10px;
+  border: 1px solid #515151;
+  color: #fff;
+}
+.ant-input-search-icon{
+  color: #fff!important;
+}
+.progress-header{
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+
+  .left{
+    font-size: 20px;
+    font-family: Roboto-Bold, Roboto;
+    font-weight: bold;
+    opacity: 0.3;
+  }
+  .right{
+    font-size: 20px;
+    font-family: Roboto-Bold, Roboto;
+    font-weight: bold;
+    color: #FFFFFF;
+  }
+}
+.progress-box{
+  width: 100%;
+  height: 10px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 5px;
+  margin: 10px 0;
+  .progress{
+    height: 10px;
+    background: #00C289;
+    border-radius: 5px;
+  }
+}
+.progress-bottom{
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+  font-family: Roboto-Medium, Roboto;
+  font-weight: 500;
+}
