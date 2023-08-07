@@ -168,13 +168,16 @@ mod dutch_auction {
             id:u128
         ) -> u128 {
             let presale = self.get_presale(id);
-            if presale.token == AccountId::default() {return 0}
-            let diff_price = presale.start_price - presale.end_price;
-            let diff_time = presale.end_time - presale.start_time;
-            let diff_cycle = presale.decrease_price_cycle * diff_price / diff_time as u128;
-            let decrease_cycle = (self.env().block_timestamp() - presale.start_time) as u128 / presale.decrease_price_cycle;
-            let current_price = decrease_cycle * diff_cycle;
-            current_price
+            let current_price = presale.start_price;
+            if presale.token == AccountId::default() {return 1}
+            let diff_cycle= ((self.env().block_timestamp() - presale.start_time) / 1000) as u128 / presale.decrease_price_cycle;
+            let diff_price = presale.start_price - diff_cycle;
+            if diff_price>0 {
+                return 1
+            } else {
+                return current_price
+            }
+
         }
         /**
        @notice
