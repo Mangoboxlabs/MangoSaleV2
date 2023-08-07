@@ -109,7 +109,7 @@ export default {
       isShow2:false,
       tokenParams:{
         erc20_code_hash: abiMap.Erc20Hash.address,
-        version:0,
+        version:new Date().getTime(),
         initial_supply: undefined,
         name:undefined,
         symbol:undefined,

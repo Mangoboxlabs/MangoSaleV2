@@ -26,7 +26,6 @@ export default {
         end_time: undefined,
         soft_cap: undefined,
         hard_cap: undefined,
-        version:new Date().getTime(),
         token: undefined,
         pay_token: undefined,
         minimum_purchase: undefined,
