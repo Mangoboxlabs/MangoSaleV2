@@ -39,7 +39,7 @@ mod token_factory {
         pub fn new_erc20(
             &mut self,
             erc20_code_hash:Hash,
-            version:u8,
+            version:u128,
             initial_supply: Balance,
             name:String,
             symbol:String,
