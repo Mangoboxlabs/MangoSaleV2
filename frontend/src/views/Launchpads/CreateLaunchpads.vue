@@ -390,8 +390,7 @@ export default {
         </div>
         <a-input v-model="paramsObj.amount" placeholder="0"/>
         <div class="info">
-          What to do with the remaining tokens in the presale contract
-          after the presale is finished.
+          The pre-sale amount of the token.
         </div>
       </div>
 
