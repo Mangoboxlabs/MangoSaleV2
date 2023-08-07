@@ -97,7 +97,7 @@ const actions = {
             //params
             spender, value
         ).signAndSend(AccountId, {signer: injector.signer}, result => {
-            dealResult(result, rootState.app.web3, state.contract, "approve")
+            dealResult(result, rootState.app.web3, state.contract, "Approve")
 
         }).catch(err=>{
             reportErr(err)
