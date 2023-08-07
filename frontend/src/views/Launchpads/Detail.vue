@@ -10,10 +10,10 @@
           {{ projectInfo.name }}
         </div>
         <div class="value" style="margin-top: 20px;display: flex">
-          <div class="col" v-if="projectInfo.github " >
+          <div class="col" v-if="projectInfo.github ">
             Github: <a target="_blank" :href="'https://github.com/'+projectInfo.github">{{ projectInfo.github }}</a>
           </div>
-          <div class="col"  v-if="projectInfo.twitter ">
+          <div class="col" v-if="projectInfo.twitter ">
             Twitter: <a target="_blank"
                         :href="'https://twitter.com/' +projectInfo.twitter ">{{ projectInfo.twitter }}</a>
           </div>
@@ -39,6 +39,14 @@
           </div>
           <div class="value">
             {{ tokenInfo.name }}
+          </div>
+        </div>
+        <div class="in-line">
+          <div class="name">
+            Pay Token
+          </div>
+          <div class="value">
+            {{ formatAddress(projectObj.payToken) }}
           </div>
         </div>
         <div class="in-line">
@@ -159,7 +167,7 @@
           </div>
           <div class="operate-btns" v-if="countdownT&&countdownT!=1">
             <a-button v-if="allowance<amount*10**decimals" type="primary" @click="approve">Approve</a-button>
-            <a-button  v-else type="primary" @click="buy">Buy</a-button>
+            <a-button v-else type="primary" @click="buy">Buy</a-button>
           </div>
           <template v-if="!countdownT">
             <a-button disabled="" type="primary">End</a-button>
@@ -222,7 +230,7 @@
           </div>
           <div class="in-line">
             <div class="name">
-              You Purchased
+              You can claim
             </div>
             <div class="value">
               {{ reward }}
@@ -232,10 +240,20 @@
             <div class="name">
 
             </div>
-            <div class="val"
-                 v-if="!countdownT  &&projectObj && (projectObj.softCap > 0) && BigNumber(projectObj.softCap.replace(/,/g, '')).lt(this.totalPerchase)">
-              <a-button @click="claim">Claim</a-button>
-            </div>
+            <template v-if="countdownT">
+              <div class="val">
+                <a-button  disabled>Not finished</a-button>
+              </div>
+            </template>
+            <template v-else>
+              <div class="val"
+                   v-if="projectObj && (projectObj.softCap > 0) && BigNumber(projectObj.softCap.replace(/,/g, '')).lt(this.totalPerchase)">
+                <a-button type="primary" @click="claim">Claim</a-button>
+              </div>
+              <div class="val" v-else>
+                <a-button  disabled>Soft top not reached </a-button>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -322,7 +340,7 @@ export default {
       await this.$store.dispatch("erc20/approve", {
         spender: this.PresaleAddress,
         value: (this.amount * 10 ** this.decimals).toString(),
-        address: this.projectObj.token.trim(),
+        address: this.projectObj.payToken.trim(),
       })
       this.getAllowance()
     },
@@ -336,7 +354,7 @@ export default {
     async getBalance() {
       let res = await this.$store.dispatch("erc20/balanceOf", {
         owner: this.account,
-        address: this.projectObj.token.trim(),
+        address: this.projectObj.payToken.trim(),
       })
       this.balance = res.replace(/,/g, '')
     },
@@ -345,7 +363,7 @@ export default {
       let allowance = await this.$store.dispatch("erc20/allowance", {
         spender: this.PresaleAddress,
         owner: this.account,
-        address: this.projectObj.token.trim(),
+        address: this.projectObj.payToken.trim(),
       })
       console.log(allowance)
       this.allowance = allowance.replace(/,/g, '')
@@ -405,9 +423,9 @@ export default {
     },
     getEndTime(item) {
       const now = new Date().getTime()
-      if(item.startTime){
+      if (item.startTime) {
         const diff = BigNumber(item.startTime.replace(/,/g, '')).minus(now)
-        if(diff >=0){
+        if (diff >= 0) {
           return 1
         }
       }

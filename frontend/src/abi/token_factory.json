@@ -1,8 +1,8 @@
 {
   "source": {
-    "hash": "0x164cb092f057e94707697f95c6c8d30c64c425f8fac2048eab93400c04054638",
+    "hash": "0x4b0cb6cc04385aa80477ca05ef48f8b48da021d685e97160f5b96127e725fcd3",
     "language": "ink! 3.0.0-rc5",
-    "compiler": "rustc 1.68.0-nightly"
+    "compiler": "rustc 1.64.0-nightly"
   },
   "contract": {
     "name": "token_factory",
@@ -41,9 +41,9 @@
               "name": "version",
               "type": {
                 "displayName": [
-                  "u8"
+                  "u128"
                 ],
-                "type": 5
+                "type": 10
               }
             },
             {

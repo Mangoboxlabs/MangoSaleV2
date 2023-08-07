@@ -7,13 +7,16 @@
       <a-select
           ref="select"
           :value="selectType"
-          style="width: 120px"
+          style="width: 150px"
           @change="handleChange"
       >
-        <a-select-option value="0">All</a-select-option>
-        <a-select-option value="1">Launchpads</a-select-option>
-        <a-select-option value="2">Fair Launchpad</a-select-option>
-        <a-select-option value="3">Dutch Auction</a-select-option>
+        <template #option="{ label }">
+          &nbsp;&nbsp;{{ label }}
+        </template>
+        <a-select-option value="0" label="All">All</a-select-option>
+        <a-select-option value="1" label="Launchpads">Launchpads</a-select-option>
+        <a-select-option value="2" label="Fair Launchpad">Fair Launchpad</a-select-option>
+        <a-select-option value="3" label="Dutch Auction">Dutch Auction</a-select-option>
       </a-select>
       <a-input-search
           v-model="searchContent"
@@ -39,11 +42,11 @@
               {{ item.symbol }}
             </div>
 
-            <div class="value" v-if="item.startPrice">
+            <div  class="value" v-if="item.startPrice">
               1 USDT =
-            </div>
-            <div class="value" v-if="item.startPrice">
-              {{ BigNumber(item.startPrice.replace(/\,/g, '')) }}   {{ item.symbol }} To  {{ BigNumber(item.endPrice.replace(/\,/g, '')) }}   {{ item.symbol }}
+
+              {{ BigNumber(item.startPrice.replace(/\,/g, '')) }} {{ item.symbol }} To
+              {{ BigNumber(item.endPrice.replace(/\,/g, '')) }} {{ item.symbol }}
             </div>
           </div>
         </div>
@@ -118,7 +121,7 @@ export default {
     goDetail(item) {
       this.$router.push({name: "LaunchpadsDetail", params: item})
     },
-    async getPoolBalance(item,name) {
+    async getPoolBalance(item, name) {
       let res = await this.$store.dispatch(name + "/getPresaleCharge", {
         id: item.id,
       })
@@ -128,13 +131,13 @@ export default {
     getEndTime(item) {
       const now = new Date().getTime()
 
-      if(item.startTime){
+      if (item.startTime) {
         const diff = BigNumber(item.startTime.replace(/,/g, '')).minus(now)
-        if(diff >=0){
+        if (diff >= 0) {
           return 1
         }
       }
-      if(!item.endTime){
+      if (!item.endTime) {
         return false
       }
       const diff = BigNumber(item.endTime.replace(/,/g, '')).minus(now)
@@ -173,12 +176,13 @@ export default {
           this.listArr = this.arr3;
           break
       }
+      this.selectType = val
     },
     onSearch() {
       this.showSearch = true
     },
     async getData() {
-      if(!this.$store.state.app.isConnected){
+      if (!this.$store.state.app.isConnected) {
         return
       }
       let resArr = []
@@ -194,7 +198,7 @@ export default {
           const coinInfo = await this.$store.dispatch("erc20/queryInfo", item.token)
           item.symbol = coinInfo.symbol
           item.type = 1
-          if(projectInfo){
+          if (projectInfo) {
             item.projectInfoObj = projectInfo.data
           }
         })
@@ -238,7 +242,7 @@ export default {
 
   },
   watch: {
-    isConnected(){
+    isConnected() {
       this.getData()
     },
     account() {
@@ -285,6 +289,7 @@ export default {
       .list-item-header {
         display: flex;
         overflow: hidden;
+
         .icon {
           width: 60px;
           height: 60px;
@@ -293,6 +298,7 @@ export default {
           border-radius: 50%;
           overflow: hidden;
           flex-shrink: 0;
+
           img {
             width: 100%;
             height: 100%;
@@ -300,10 +306,11 @@ export default {
         }
 
         .right {
+
           padding-left: 10px;
           display: flex;
-          flex-direction: column;
           justify-content: center;
+          flex-direction: column;
 
           .name {
             font-size: 20px;
