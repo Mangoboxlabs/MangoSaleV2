@@ -158,11 +158,9 @@ mod fair_launchpad {
         )->u128{
             let  claimed = self.user_claim.get(&(self.env().caller(),id)).unwrap_or(&false).clone();
             if claimed { return  0}
-            let presale = self.get_presale(id);
             let user_charge = self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
             if user_charge == 0 { return  0 }
-            let all_charge = self.all_charge.get(&id).unwrap_or(&0).clone();
-            let user_reward = user_charge / all_charge * presale.amount;
+            let user_reward = (1)  * user_charge;
             user_reward
         }
         /**
