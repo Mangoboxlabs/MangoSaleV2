@@ -173,7 +173,12 @@ export default {
         return
       }
       // this.tokenParams.version = parseInt(Math.random() * 300)
-      this.tokenParams.version = this.list.length+3
+      if(this.list&&this.list.length){
+        this.tokenParams.version = this.list.length+3
+
+      }else{
+        this.tokenParams.version = 1
+      }
 
       this.tokenParams.owner = this.$store.state.app.account
       if(!this.$store.state.app.account){
