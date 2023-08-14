@@ -142,7 +142,7 @@ export default {
       if (!this.paramsObj.owner) {
         this.paramsObj.owner = this.account
       }
-      this.paramsObj.pay_token = this.paramsObj.token
+
       this.paramsObj.start_time = new Date(this.startTime).getTime()
       this.paramsObj.end_time = new Date(this.endTime).getTime()
 
@@ -292,11 +292,12 @@ export default {
       </a-button>
       <div class="input-part" style="margin-top: 30px">
         <div class="name">
-          Currency: USDT
+          PayToken
         </div>
         <div class="info">
-          Users can only pay for your tokens with USDT.
+          Users can only pay for your tokens.
         </div>
+        <a-input @input="checkAddress" v-model="paramsObj.pay_token" placeholder="Address"/>
       </div>
       <div class="input-part" v-if="contractName=='Launchpad'">
         <div class="name">

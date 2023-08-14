@@ -46,29 +46,32 @@ describe('example to-do app', () => {
             cy.get('.CreateLaunchpads .input-part:first input').type('5FWFgJbQ9qF87VSeLo394qLmCkNK9uHaohnqj57UgqYtyvap')
         }).then(() => {
             cy.wait(1000)
-            cy.get('.CreateLaunchpads .input-part').eq(2).find('input').type('100')
+            cy.get('.CreateLaunchpads .input-part').eq(2).find('input').type('5FWFgJbQ9qF87VSeLo394qLmCkNK9uHaohnqj57UgqYtyvap')
         }).then(() => {
             cy.wait(1000)
-            cy.get('.CreateLaunchpads .input-part').eq(3).find('input').type('1000')
+            cy.get('.CreateLaunchpads .input-part').eq(3).find('input').type('100')
         }).then(() => {
             cy.wait(1000)
-            cy.get('.CreateLaunchpads .input-part').eq(4).find('input').type('10000')
+            cy.get('.CreateLaunchpads .input-part').eq(4).find('input').type('1000')
         }).then(() => {
             cy.wait(1000)
-            cy.get('.CreateLaunchpads .input-part').eq(5).find('input').type('10')
+            cy.get('.CreateLaunchpads .input-part').eq(5).find('input').type('10000')
         }).then(() => {
             cy.wait(1000)
-            cy.get('.CreateLaunchpads .input-part').eq(6).find('input').type('100')
+            cy.get('.CreateLaunchpads .input-part').eq(6).find('input').type('10')
         }).then(() => {
             cy.wait(1000)
             cy.get('.CreateLaunchpads .input-part').eq(7).find('input').type('100')
         }).then(() => {
             cy.wait(1000)
-            cy.get('.CreateLaunchpads .input-part').eq(8).find('input').click()
-                .get('.ant-calendar-cell:first').click().get('.ant-calendar-ok-btn').click()
+            cy.get('.CreateLaunchpads .input-part').eq(8).find('input').type('100')
         }).then(() => {
             cy.wait(1000)
             cy.get('.CreateLaunchpads .input-part').eq(9).find('input').click()
+                .get('.ant-calendar-cell:first').click().get('.ant-calendar-ok-btn').click()
+        }).then(() => {
+            cy.wait(1000)
+            cy.get('.CreateLaunchpads .input-part').eq(10).find('input').click()
                 .get('.ant-calendar-cell:last').click().get('.ant-calendar-ok-btn').click()
         }).then(() => {
             cy.wait(1000)

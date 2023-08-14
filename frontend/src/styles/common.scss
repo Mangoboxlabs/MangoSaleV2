@@ -10,82 +10,98 @@
   font-weight: bold;
 
 }
-.ant-btn-dashed{
-  background:none;
+
+.ant-btn-dashed {
+  background: none;
   border: 1px solid #54D500;
   color: #54D500;
+
   &:active, &:hover {
     background: linear-gradient(225deg, #54D500 0%, #2AAA00 100%);;
   }
 }
-.ant-btn-dashed:focus, .ant-btn-dashed:hover{
-  background:none;
+
+.ant-btn-dashed:focus, .ant-btn-dashed:hover {
+  background: none;
   border: 1px solid #54D500;
   color: #54D500;
 }
 
-.ant-btn-primary{
+.ant-btn-primary {
   background: linear-gradient(225deg, #54D500 0%, #2AAA00 100%);;
+
   &:active, &:hover {
     background: linear-gradient(225deg, #54D500 0%, #2AAA00 100%);;
   }
 }
-.ant-btn-primary:focus, .ant-btn-primary:hover{
+
+.ant-btn-primary:focus, .ant-btn-primary:hover {
   background: linear-gradient(225deg, #54D500 0%, #2AAA00 100%);;
 
 }
+
 .ant-select {
   .ant-select-selection {
     background: #1d2126;
     border-radius: 10px;
     border: 1px solid #515151;
     color: #fff;
-    .ant-select-arrow-icon{
-      svg{
-      }
+
+    .ant-select-arrow-icon {
+
+      width: 20px;
+      filter: drop-shadow(#efefef 10000px -2px);
+      transform: translateX(-10000px);
     }
   }
 }
-.ant-input{
+
+.ant-input {
   background: #0D1319;
   border-radius: 10px;
   border: 1px solid #515151;
   color: #fff;
 }
-.ant-input-search-icon{
-  color: #fff!important;
+
+.ant-input-search-icon {
+  color: #fff !important;
 }
-.progress-header{
+
+.progress-header {
   display: flex;
   justify-content: space-between;
   margin-top: 20px;
 
-  .left{
+  .left {
     font-size: 20px;
     font-family: Roboto-Bold, Roboto;
     font-weight: bold;
     opacity: 0.3;
   }
-  .right{
+
+  .right {
     font-size: 20px;
     font-family: Roboto-Bold, Roboto;
     font-weight: bold;
     color: #FFFFFF;
   }
 }
-.progress-box{
+
+.progress-box {
   width: 100%;
   height: 10px;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 5px;
   margin: 10px 0;
-  .progress{
+
+  .progress {
     height: 10px;
     background: #00C289;
     border-radius: 5px;
   }
 }
-.progress-bottom{
+
+.progress-bottom {
   display: flex;
   justify-content: space-between;
   font-size: 16px;

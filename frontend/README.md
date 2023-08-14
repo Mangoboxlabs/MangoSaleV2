@@ -6,10 +6,10 @@ Please install `Polkadot JS Extension` before you start. You can get it from her
 
 ### Get source code
 
-Please get the code from https://github.com/Mangoboxlabs/MangoSaleV2.git
+Please get the code from https://github.com/Mangoboxlabs/MangoSale.git
 
 ```
-git clone https://github.com/Mangoboxlabs/MangoSaleV2.git
+git clone https://github.com/Mangoboxlabs/MangoSale.git
 ```
 
 ## Project setup
@@ -53,7 +53,7 @@ npx cypress open
 
   
 
-*  Wallet plugin address: https://github.com/Mangoboxlabs/MangoSaleV2/tree/main/frontend/master-build.zip
+*  Wallet plugin address: https://github.com/Mangoboxlabs/MangoSale/tree/main/frontend/master-build.zip
 
 #### 1) Download the plugin given 
 
@@ -81,7 +81,7 @@ npx cypress open
 
 #####  Test sequence :  
 
-createToken => createLock => createAirdrop => distrubutionAndClaim
+`createToken.cy => createLaunchpad.cy => purchaseToken.cy`
 
 ![3](./img/6.jpg)
 

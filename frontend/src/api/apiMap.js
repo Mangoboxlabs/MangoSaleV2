@@ -4,16 +4,16 @@ const abiMap = {
         abi: require("../abi/launchpad.json")
     },
     FairLaunchpad: {
-        address: "5Dq61YMX6zH6M4NRkUoXngtYJDLAvu8vuzstG1gyQLEWpKen",
+        address: "5GBRdNHQW4a35KZu4fRpPocsTnVZaLeaNMMeFHeg1Pa4XrxK",
         abi: require("../abi/FairLaunch.json")
     },
     DutchAuction: {
-        address: "5D9twf1f7iwe9k1K75XPZwSE3LcbyTsgnPXXznaUhPY944iW",
+        address: "5CT7Qwp8Z3VmpntkPfbjicSkomDvza9b7XXJcPFbc9aWa7uV",
         abi: require("../abi/DutchAuction.json")
     },
 
     tokenFactory : {
-        address:'5HfipxSLEjXCbBfyg8s1o5vV5ybMRPdybx9yMsfhU8FLFgDG',
+        address:'5HYW3ZFcjukAeVe61R9dZodn2nai4Gq66c3MPJYFd2VS8B2a',
         abi:require("../abi/token_factory.json")
     },
     Erc20Hash:{
