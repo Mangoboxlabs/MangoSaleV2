@@ -85,7 +85,7 @@ mod fair_launchpad {
             &mut self,
             info: PresaleDetail
         ) -> bool {
-            let mut data = info.clone();
+            let mut data = info;
             if data.token == AccountId::default() {return  false }
             let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(data.token);
             let _ret = erc20.transfer_from(self.env().caller(),self.env().account_id(),data.amount);
@@ -110,7 +110,7 @@ mod fair_launchpad {
             id:u128,
             amount:u128
         ) ->bool {
-            let charge = self.presale_charge.get(&id).unwrap_or(&0).clone();
+            let charge = *self.presale_charge.get(&id).unwrap_or(&0);
             let presale = self.get_presale(id);
             if presale.token == AccountId::default() {return  false }
             let mut pay_erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.pay_token);
@@ -120,8 +120,8 @@ mod fair_launchpad {
             assert!(presale.maximum_purchase > amount);
             let _ret = pay_erc20.transfer_from(self.env().caller(),self.env().account_id(),amount);
             self.presale_charge.insert(id,charge + amount);
-            let  user_charge = self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
-            let  all_charge = self.all_charge.get(&id).unwrap_or(&0).clone();
+            let  user_charge = *self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0);
+            let  all_charge = *self.all_charge.get(&id).unwrap_or(&0);
             self.user_charge.insert((self.env().caller(),id),user_charge + amount);
             self.all_charge.insert(id,all_charge + amount);
             true
@@ -139,7 +139,7 @@ mod fair_launchpad {
             let presale = self.get_presale(id);
             if presale.token == AccountId::default() {return  false }
             assert!(presale.end_time < self.env().block_timestamp());
-            assert!(self.state(id) == true);
+            assert!(self.state(id));
             let user_reward = self.get_reward(id);
             let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.token);
             let _ret = erc20.transfer(self.env().caller(),user_reward);
@@ -156,12 +156,11 @@ mod fair_launchpad {
             &self,
             id:u128
         )->u128{
-            let  claimed = self.user_claim.get(&(self.env().caller(),id)).unwrap_or(&false).clone();
+            let  claimed = *self.user_claim.get(&(self.env().caller(),id)).unwrap_or(&false);
             if claimed { return  0}
-            let user_charge = self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
+            let user_charge = *self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0);
             if user_charge == 0 { return  0 }
-            let user_reward = (1)  * user_charge;
-            user_reward
+            user_charge
         }
         /**
          @notice
@@ -173,9 +172,9 @@ mod fair_launchpad {
             let presale = self.get_presale(id);
             let charge = self.get_presale_charge(id);
             if presale.soft_cap < charge {
-                return true
+                return true;
             }
-            return false
+            false
         }
         /**
           @notice
@@ -220,7 +219,7 @@ mod fair_launchpad {
        */
         #[ink(message)]
         pub fn get_presale_charge(&self,id:u128) -> u128 {
-            self.presale_charge.get(&id).unwrap_or(&0).clone()
+            *self.presale_charge.get(&id).unwrap_or(&0)
         }
     }
     #[cfg(test)]

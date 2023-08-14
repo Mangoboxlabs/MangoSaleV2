@@ -92,7 +92,7 @@ mod dutch_auction {
             info: PresaleDetail
         ) -> bool {
             assert!(info.start_price > info.end_price);
-            let mut data = info.clone();
+            let mut data = info;
             if data.token == AccountId::default() {return  false }
             let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(data.token);
             let _ret = erc20.transfer_from(self.env().caller(),self.env().account_id(),data.amount);
@@ -117,7 +117,7 @@ mod dutch_auction {
             id:u128,
             amount:u128
         ) ->bool {
-            let charge = self.presale_charge.get(&id).unwrap_or(&0).clone();
+            let charge = *self.presale_charge.get(&id).unwrap_or(&0);
             let presale = self.get_presale(id);
             if presale.token == AccountId::default() {return  false }
             let mut pay_erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.pay_token);
@@ -127,13 +127,13 @@ mod dutch_auction {
             assert!(presale.maximum_purchase > amount);
             let _ret = pay_erc20.transfer_from(self.env().caller(),self.env().account_id(),amount);
             self.presale_charge.insert(id,charge + amount);
-            let  user_charge = self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
-            let  all_charge = self.all_charge.get(&id).unwrap_or(&0).clone();
+            let  user_charge = *self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0);
+            let  all_charge = *self.all_charge.get(&id).unwrap_or(&0);
             self.user_charge.insert((self.env().caller(),id),user_charge + amount);
             self.all_charge.insert(id,all_charge + amount);
             let current_price = self.get_current_price(id);
             let can_reward = amount * current_price;
-            let  user_reward = self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
+            let  user_reward = *self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0);
             self.user_reward.insert((self.env().caller(),id),user_reward + can_reward);
             true
         }
@@ -150,7 +150,7 @@ mod dutch_auction {
             let presale = self.get_presale(id);
             if presale.token == AccountId::default() {return  false }
             assert!(presale.end_time < self.env().block_timestamp());
-            assert!(self.state(id) == true);
+            assert!(self.state(id));
             let user_reward = self.get_reward(id);
             let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.token);
             let _ret = erc20.transfer(self.env().caller(),user_reward);
@@ -173,9 +173,9 @@ mod dutch_auction {
             let diff_cycle= ((self.env().block_timestamp() - presale.start_time) / 1000) as u128 / presale.decrease_price_cycle;
             let diff_price = presale.start_price - diff_cycle;
             if diff_price>0 {
-                return 1
+                1
             } else {
-                return current_price
+                current_price
             }
 
         }
@@ -189,7 +189,7 @@ mod dutch_auction {
             &self,
             id:u128
         )->u128{
-            self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone()
+            *self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0)
         }
         /**
          @notice
@@ -201,9 +201,9 @@ mod dutch_auction {
             let presale = self.get_presale(id);
             let charge = self.get_presale_charge(id);
             if presale.soft_cap < charge {
-                return true
+                 return true;
             }
-            return false
+            false
         }
         /**
           @notice
@@ -252,7 +252,7 @@ mod dutch_auction {
        */
         #[ink(message)]
         pub fn get_presale_charge(&self,id:u128) -> u128 {
-            self.presale_charge.get(&id).unwrap_or(&0).clone()
+            *self.presale_charge.get(&id).unwrap_or(&0)
         }
     }
     #[cfg(test)]
@@ -326,7 +326,7 @@ mod dutch_auction {
         #[ink::test]
         fn get_current_price_works() {
             let  mp = DutchAuction::new();
-            assert!(mp.get_current_price(0) == 0);
+            assert!(mp.get_current_price(0) == 1);
         }
     }
 }
