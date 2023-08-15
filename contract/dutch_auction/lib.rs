@@ -1,6 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 use ink_lang as ink;
+pub use self::dutch_auction::{
+    DutchAuction
+};
 #[allow(unused_imports)]
 #[allow(renamed_and_removed_lints)]
 #[ink::contract]
@@ -21,37 +24,39 @@ mod dutch_auction {
     feature = "std",
     derive(scale_info::TypeInfo, ink_storage::traits::StorageLayout)
     )]
-    /**
-    @member owner creater of presale
-    @member start_time Presale start time
-    @member end_time Presale end time
-    @member soft_cap Presale soft top
-    @member hard_cap Presale hard top
-    @member token contract of Presale
-    @member pay_token pay of Presale
-    @member minimum_purchase Minimum purchase quantity
-    @member maximum_purchase maximum purchase quantity
-    @member project_info the information of project
-    @member amount the amount of presale
-     */
     pub struct PresaleDetail {
         id:u128,
+        ///  creater of presale
         owner:AccountId,
+        ///  Presale start time
         start_time:u64,
+        /// Presale end time
         end_time: u64,
+        /// Presale soft top
         soft_cap: u128,
+        /// Presale hard top
         hard_cap:u128,
+        /// presale start price
         start_price:u128,
+        /// presale end price
         end_price:u128,
+        /// Presale price reduction cycle
         decrease_price_cycle:u128,
+        /// contract of Presale
         token: AccountId,
+        ///  pay of Presale
         pay_token: AccountId,
+        /// Minimum purchase quantity
         minimum_purchase:u128,
+        /// maximum purchase quantity
         maximum_purchase:u128,
+        /// the information of project
         project_info:String,
+        /// the amount of presale
         amount:u128,
 
     }
+    /// A  DutchAuction contract.
     #[ink(storage)]
     pub struct DutchAuction {
         user_presales: StorageHashMap<AccountId, Vec<PresaleDetail>>,
@@ -69,6 +74,7 @@ mod dutch_auction {
     }
 
     impl DutchAuction {
+        /// Creates a new DutchAuction
         #[ink(constructor)]
         pub fn new() -> Self {
             Self {
@@ -81,11 +87,9 @@ mod dutch_auction {
                 all_presales:Vec::new()
             }
         }
-        /**
-        @notice
-        create a new presale
-        @param info PresaleDetail
-         */
+         /// create a new presale
+         ///
+         /// Returns `false` if the token is non.
         #[ink(message)]
         pub fn create(
             &mut self,
@@ -105,12 +109,9 @@ mod dutch_auction {
             self.all_presales.push(data);
             true
         }
-        /**
-        @notice
-        buy by presale
-        @param id the id of presale
-        @param amount the amount of presale
-         */
+         /// buy by presale
+         ///
+         /// Returns `false` if the token is non.
         #[ink(message)]
         pub fn buy(
             &mut self,
@@ -137,11 +138,9 @@ mod dutch_auction {
             self.user_reward.insert((self.env().caller(),id),user_reward + can_reward);
             true
         }
-        /**
-          @notice
-          Extract locked token
-          @param id the id of presale
-           */
+         /// Extract locked token
+         ///
+         /// Returns `false` if the token is non.
         #[ink(message)]
         pub fn claim(
             &mut self,
@@ -157,11 +156,8 @@ mod dutch_auction {
             self.user_reward.insert((self.env().caller(),id),0);
             true
         }
-        /**
-          @notice
-          Get the price  by id
-          @param id the id of presale
-       */
+
+        /// Get the price  by id
         #[ink(message)]
         pub fn get_current_price(
             &self,
@@ -179,11 +175,9 @@ mod dutch_auction {
             }
 
         }
-        /**
-       @notice
-       Get the user reward by id
-       @param id the id of presale
-        */
+        ///  Get the user reward by id
+       ///
+       /// Returns `0` if the reward is non.
         #[ink(message)]
         pub fn get_reward(
             &self,
@@ -191,11 +185,9 @@ mod dutch_auction {
         )->u128{
             *self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0)
         }
-        /**
-         @notice
-         Get the state  by id
-         @param id the id of presale
-      */
+        ///   Get the state  by id
+         ///
+         /// Returns `false` if soft_cap > charge.
         #[ink(message)]
         pub fn state(&self,id:u128) -> bool {
             let presale = self.get_presale(id);
@@ -205,26 +197,17 @@ mod dutch_auction {
             }
             false
         }
-        /**
-          @notice
-          Get all presale
-       */
+        ///   Get all presale
         #[ink(message)]
         pub fn get_all_presale(&self) -> Vec<PresaleDetail> {
             self.all_presales.clone()
         }
-        /**
-        @notice
-        Get user's presale
-         */
+        /// Get user's presale
         #[ink(message)]
         pub fn get_user_presale(&self) -> Vec<PresaleDetail> {
             self.user_presales.get(&self.env().caller()).unwrap_or(&Vec::new()).clone()
         }
-        /**
-          @notice
-          Get  presale by id
-       */
+       /// Get  presale by id
         #[ink(message)]
         pub fn get_presale(&self,id:u128) -> PresaleDetail {
             let default_pre = PresaleDetail {
@@ -246,10 +229,7 @@ mod dutch_auction {
             };
             self.every_presale.get(&id).unwrap_or(&default_pre).clone()
         }
-        /**
-          @notice
-          Get user's presale
-       */
+        ///   Get user's presale
         #[ink(message)]
         pub fn get_presale_charge(&self,id:u128) -> u128 {
             *self.presale_charge.get(&id).unwrap_or(&0)

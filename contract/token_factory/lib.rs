@@ -1,6 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 use ink_lang as ink;
+pub use self::token_factory::{
+    TokenFactory
+};
 #[allow(unused_imports)]
 #[allow(renamed_and_removed_lints)]
 #[allow(clippy::too_many_arguments)]
@@ -18,7 +21,7 @@ mod token_factory {
     };
     const CONTRACT_INIT_BALANCE: u128 = 1000 * 1_000_000_000_000;
 
-
+    /// A  TokenFactory contract.
     #[ink(storage)]
     pub struct TokenFactory {
         user_tokens: StorageHashMap<AccountId, Vec<AccountId>>,
@@ -29,12 +32,16 @@ mod token_factory {
         }
     }
     impl TokenFactory {
+        /// Creates a new TokenFactory
         #[ink(constructor)]
         pub fn new() -> Self {
             Self {
                 user_tokens:StorageHashMap::new(),
             }
         }
+        /// create a new erc20
+        ///
+        /// Returns contract address
         #[ink(message)]
         pub fn new_erc20(
             &mut self,
@@ -66,11 +73,7 @@ mod token_factory {
             let _ret = erc20.set_configure(burn_tax,marketing_tax,marketing_address,transfer_limit,wallet_limit);
             contract_addr
         }
-        /**
-        @notice
-        Get user's tokens
-        @param owner The address to set as the owner of the token. The token  will be owned by this address.
-         */
+        ///  Get user's tokens
         #[ink(message)]
         pub fn get_user_tokens(&self, owner: AccountId) -> Vec<AccountId> {
             self.user_tokens.get(&owner).unwrap_or(&Vec::new()).clone()
