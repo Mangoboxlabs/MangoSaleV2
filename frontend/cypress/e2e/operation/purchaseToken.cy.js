@@ -43,7 +43,7 @@ describe('example to-do app', () => {
       cy.get('.max-btn').click()
     }).then(()=>{
       cy.wait(1000)
-      cy.get('.operate-btns .ant-btn').click()
+      cy.get('.operate-btns .buy-btn').click()
     })
 
 

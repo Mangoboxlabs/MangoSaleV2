@@ -94,7 +94,7 @@
       </div>
     </div>
     <div class="mangobox-button" @click="createToken">
-      CREAT
+      CREATE
     </div>
   </div>
 </template>
@@ -109,7 +109,7 @@ export default {
       isShow2:false,
       tokenParams:{
         erc20_code_hash: abiMap.Erc20Hash.address,
-        version:new Date().getTime(),
+        version: parseInt(new Date().getTime() /1000).toString(),
         initial_supply: undefined,
         name:undefined,
         symbol:undefined,
@@ -172,14 +172,8 @@ export default {
         })
         return
       }
-      // this.tokenParams.version = parseInt(Math.random() * 300)
-      if(this.list&&this.list.length){
-        this.tokenParams.version = this.list.length+3
 
-      }else{
-        this.tokenParams.version = 1
-      }
-
+      console.log(this.tokenParams.version)
       this.tokenParams.owner = this.$store.state.app.account
       if(!this.$store.state.app.account){
         this.$eventBus.$emit('message', {

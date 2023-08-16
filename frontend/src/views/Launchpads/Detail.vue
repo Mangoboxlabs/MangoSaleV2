@@ -153,7 +153,7 @@
           <div class="input-box">
             <a-input class="amount-input" @input="checkInput" v-model="amount"
                      :placeholder="projectObj.minimumPurchase + '~' + projectObj.maximumPurchase"/>
-            <div class="max-btn" @click="amount=(projectObj.maximumPurchase - reward)">
+            <div class="max-btn" @click="setMax">
               Max
             </div>
           </div>
@@ -167,7 +167,7 @@
           </div>
           <div class="operate-btns" v-if="countdownT&&countdownT!=1">
             <a-button v-if="allowance<amount*10**decimals" type="primary" @click="approve">Approve</a-button>
-            <a-button v-else type="primary" @click="buy">Buy</a-button>
+            <a-button v-else type="primary" class="buy-btn" @click="buy">Buy</a-button>
           </div>
           <template v-if="!countdownT">
             <a-button disabled="" type="primary">End</a-button>
@@ -314,9 +314,12 @@ export default {
     clearInterval(this.countDown)
   },
   methods: {
+    setMax(){
+      this.amount=(this.projectObj.maximumPurchase.replace(/,/g, '') - this.reward)
+    },
     async getReward() {
       const reward = await this.$store.dispatch(this.contractName + "/getReward", this.projectObj.id)
-      this.reward = reward
+      this.reward = reward.replace(/,/g, '')
     },
     async claim() {
       await this.$store.dispatch(this.contractName + "/claim", {
