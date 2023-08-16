@@ -170,10 +170,15 @@
             <a-button v-else type="primary" class="buy-btn" @click="buy">Buy</a-button>
           </div>
           <template v-if="!countdownT">
-            <a-button disabled="" type="primary">End</a-button>
+            <div class="operate-btns">
+              <a-button disabled="" class="buy-btn" type="primary">End</a-button>
+
+            </div>
           </template>
           <template v-if="countdownT==1">
-            <a-button disabled="" type="primary"> Not Start</a-button>
+            <div class="operate-btns">
+              <a-button disabled=""  class="buy-btn" type="primary"> Not Start</a-button>
+            </div>
           </template>
 
         </div>

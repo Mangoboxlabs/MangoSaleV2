@@ -1,6 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 use ink_lang as ink;
+pub use self::launchpad::{
+    Launchpad
+};
 #[allow(unused_imports)]
 #[allow(renamed_and_removed_lints)]
 #[ink::contract]
@@ -21,35 +24,34 @@ mod launchpad {
     feature = "std",
     derive(scale_info::TypeInfo, ink_storage::traits::StorageLayout)
     )]
-    /**
-    @member owner creater of presale
-    @member start_time Presale start time
-    @member end_time Presale end time
-    @member soft_cap Presale soft top
-    @member hard_cap Presale hard top
-    @member token contract of Presale
-    @member pay_token pay of Presale
-    @member minimum_purchase Minimum purchase quantity
-    @member maximum_purchase maximum purchase quantity
-    @member price_presale presale price
-    @member project_info the information of project
-    @member amount the amount of presale
-     */
     pub struct PresaleDetail {
         id:u128,
+        /// creater of presale
         owner:AccountId,
+        /// Presale start time
         start_time:u64,
+        /// Presale end time
         end_time: u64,
+        /// Presale soft top
         soft_cap: u128,
+        /// Presale hard top
         hard_cap: u128,
+        /// contract of Presale
         token: AccountId,
+        /// pay of Presale
         pay_token: AccountId,
+        /// Minimum purchase quantity
         minimum_purchase:u128,
+        /// maximum purchase quantity
         maximum_purchase:u128,
+        /// presale price
         price_presale:u128,
+        /// the information of project
         project_info:String,
+        /// the amount of presale
         amount:u128,
     }
+    /// A  Launchpad contract.
     #[ink(storage)]
     pub struct Launchpad {
         user_presales: StorageHashMap<AccountId, Vec<PresaleDetail>>,
@@ -66,6 +68,7 @@ mod launchpad {
     }
 
     impl Launchpad {
+        /// Creates a new launchpad
         #[ink(constructor)]
         pub fn new() -> Self {
             Self {
@@ -77,17 +80,16 @@ mod launchpad {
                 all_presales:Vec::new()
             }
         }
-        /**
-        @notice
-        create a new presale
-        @param info PresaleDetail
-         */
+
+        /// create a new presale
+        ///
+        /// Returns `false` if the token is non.
         #[ink(message)]
         pub fn create(
             &mut self,
             info: PresaleDetail
         ) -> bool {
-            let mut data = info.clone();
+            let mut data = info;
             if data.token == AccountId::default() {return  false }
             let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(data.token);
             let _ret = erc20.transfer_from(self.env().caller(),self.env().account_id(),data.amount);
@@ -100,12 +102,10 @@ mod launchpad {
             self.all_presales.push(data);
             true
         }
-        /**
-        @notice
-        buy by presale
-        @param id the id of presale
-        @param amount the amount of buy
-         */
+
+        /// buy by presale
+        ///
+        /// Returns `false` if the token is non.
         #[ink(message)]
         pub fn buy(
             &mut self,
@@ -125,17 +125,15 @@ mod launchpad {
             self.presale_charge.insert(id,charge + amount);
             let reward_amount = presale.price_presale * amount;
             // let _ret = pay_erc20.transfer(self.env().caller(),reward_amount);
-            let  user_charge = self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
-            let  user_reward = self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone();
+            let  user_charge = *self.user_charge.get(&(self.env().caller(),id)).unwrap_or(&0);
+            let  user_reward = *self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0);
             self.user_charge.insert((self.env().caller(),id),user_charge + amount);
             self.user_reward.insert((self.env().caller(),id),user_reward + reward_amount);
             true
         }
-        /**
-         @notice
-         Extract locked token
-         @param id the id of presale
-          */
+        /// Extract locked token
+        ///
+        /// Returns `false` if the token is non.
         #[ink(message)]
         pub fn claim(
             &mut self,
@@ -144,59 +142,47 @@ mod launchpad {
             let presale = self.get_presale(id);
             if presale.token == AccountId::default() {return  false }
             assert!(presale.end_time < self.env().block_timestamp());
-            assert!(self.state(id) == true);
+            assert!(self.state(id));
             let user_reward = self.get_reward(id);
             let mut erc20: Erc20 = ink_env::call::FromAccountId::from_account_id(presale.token);
             let _ret = erc20.transfer(self.env().caller(),user_reward);
             self.user_reward.insert((self.env().caller(),id),0);
             true
         }
-        /**
-        @notice
-        Get the user reward by id
-        @param id the id of presale
-         */
+        ///  Get the user reward by id
+        ///
+        /// Returns `0` if the reward is non.
         #[ink(message)]
         pub fn get_reward(
             &self,
             id:u128
         )->u128{
-            self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0).clone()
+            *self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0)
         }
-        /**
-       @notice
-       Get the state  by id
-       @param id the id of presale
-        */
+
+        ///   Get the state  by id
+        ///
+        /// Returns `false` if soft_cap > charge.
         #[ink(message)]
         pub fn state(&self,id:u128) -> bool {
             let presale = self.get_presale(id);
             let charge = self.get_presale_charge(id);
             if presale.soft_cap < charge {
-                return true
+                return true;
             }
-            return false
+            false
         }
-        /**
-          @notice
-          Get all presale
-       */
+        ///   Get all presale
         #[ink(message)]
         pub fn get_all_presale(&self) -> Vec<PresaleDetail> {
             self.all_presales.clone()
         }
-        /**
-        @notice
-        Get user's presale
-         */
+        ///   Get user's presale
         #[ink(message)]
         pub fn get_user_presale(&self) -> Vec<PresaleDetail> {
             self.user_presales.get(&self.env().caller()).unwrap_or(&Vec::new()).clone()
         }
-        /**
-          @notice
-          Get  presale by id
-       */
+        ///  Get  presale by id
         #[ink(message)]
         pub fn get_presale(&self,id:u128) -> PresaleDetail {
             let default_pre = PresaleDetail {
@@ -216,13 +202,10 @@ mod launchpad {
             };
             self.every_presale.get(&id).unwrap_or(&default_pre).clone()
         }
-        /**
-          @notice
-          Get user's presale
-       */
+       /// Get user's presale
         #[ink(message)]
         pub fn get_presale_charge(&self,id:u128) -> u128 {
-            self.presale_charge.get(&id).unwrap_or(&0).clone()
+            *self.presale_charge.get(&id).unwrap_or(&0)
         }
     }
     #[cfg(test)]
