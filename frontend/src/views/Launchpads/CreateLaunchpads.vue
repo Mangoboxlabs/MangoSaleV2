@@ -155,13 +155,13 @@ export default {
         this.paramsObj.decrease_price_cycle = this.decreasePricePresale
       }
 
-      if (!this.tokenInfo || !this.tokenInfo.name) {
-        this.$eventBus.$emit('message', {
-          message: "Please input right token ",
-          type: "error"
-        })
-        return
-      }
+      // if (!this.tokenInfo || !this.tokenInfo.name) {
+      //   this.$eventBus.$emit('message', {
+      //     message: "Please input right token ",
+      //     type: "error"
+      //   })
+      //   return
+      // }
       if (!this.paramsObj.soft_cap) {
         this.$eventBus.$emit('message', {
           message: "Please input  softCap ",

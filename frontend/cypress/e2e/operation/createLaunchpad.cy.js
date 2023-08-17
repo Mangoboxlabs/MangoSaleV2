@@ -26,7 +26,7 @@ describe('example to-do app', () => {
         cy.visit('http://localhost:8080/')
         cy.viewport(1600, 900)
     })
-
+    let address = ""
     it('displays two todo items by default', () => {
         // We use the `cy.get()` command to get all elements that match the selector.
         // Then, we use `should` to assert that there are two matched items,
@@ -37,16 +37,35 @@ describe('example to-do app', () => {
             cy.get('.connect-item:first').click()
         }).then(() => {
             cy.wait(1000)
+            cy.get('.mongobox-header .nav-box ul li:first .w-font').click()
+        }).then(() => {
+            cy.wait(1000)
+            cy.get('.mongobox-header .nav-box ul li:first .w-font .nav-list .nav-item:nth-child(1)').click()
+        }).then(() => {
+            cy.wait(5000)
+            cy.get('.token .row').eq(0).find('.btn').click()
+            cy.get('.token .row').eq(0).find('.address').invoke('text').then(text => {
+                console.log(text);
+                address = text
+                cy.wait(1000)
+                cy.get('.mongobox-header ul li').eq(1).click()
+
+            })
+        }).then(() => {
+            cy.wait(1000)
             cy.get('.mongobox-header .nav-box ul li:last .w-font').click()
         }).then(() => {
             cy.wait(1000)
             cy.get('.mongobox-header .nav-box ul li:last .w-font .nav-list .nav-item:nth-child(1)').click()
         }).then(() => {
             cy.wait(1000)
-            cy.get('.CreateLaunchpads .input-part:first input').type('5FWFgJbQ9qF87VSeLo394qLmCkNK9uHaohnqj57UgqYtyvap')
+            cy.get('.CreateLaunchpads .input-part:first input').type(address)
         }).then(() => {
             cy.wait(1000)
-            cy.get('.CreateLaunchpads .input-part').eq(2).find('input').type('5FWFgJbQ9qF87VSeLo394qLmCkNK9uHaohnqj57UgqYtyvap')
+            cy.get('.CreateLaunchpads .input-part').eq(1).find('input').type(address)
+        }).then(() => {
+            cy.wait(1000)
+            cy.get('.CreateLaunchpads .input-part').eq(2).find('input').type(address)
         }).then(() => {
             cy.wait(1000)
             cy.get('.CreateLaunchpads .input-part').eq(3).find('input').type('100')
@@ -64,14 +83,11 @@ describe('example to-do app', () => {
             cy.get('.CreateLaunchpads .input-part').eq(7).find('input').type('100')
         }).then(() => {
             cy.wait(1000)
-            cy.get('.CreateLaunchpads .input-part').eq(8).find('input').type('100')
-        }).then(() => {
-            cy.wait(1000)
-            cy.get('.CreateLaunchpads .input-part').eq(9).find('input').click()
+            cy.get('.CreateLaunchpads .input-part').eq(8).find('input').click()
                 .get('.ant-calendar-cell:first').click().get('.ant-calendar-ok-btn').click()
         }).then(() => {
             cy.wait(1000)
-            cy.get('.CreateLaunchpads .input-part').eq(10).find('input').click()
+            cy.get('.CreateLaunchpads .input-part').eq(9).find('input').click()
                 .get('.ant-calendar-cell:last').click().get('.ant-calendar-ok-btn').click()
         }).then(() => {
             cy.wait(1000)
