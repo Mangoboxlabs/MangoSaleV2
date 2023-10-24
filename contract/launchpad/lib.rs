@@ -160,7 +160,7 @@ mod launchpad {
             *self.user_reward.get(&(self.env().caller(),id)).unwrap_or(&0)
         }
 
-        ///   Get the state  by id
+        ///  Get the state  by id
         ///
         /// Returns `false` if soft_cap > charge.
         #[ink(message)]
