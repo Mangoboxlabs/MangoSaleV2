@@ -79,7 +79,6 @@ mod token_factory {
             self.user_tokens.get(&owner).unwrap_or(&Vec::new()).clone()
         }
 
-
     }
     #[cfg(test)]
     mod tests {
