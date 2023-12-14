@@ -1,4 +1,4 @@
-## MangoSale
+# MangoSale
 
 MangoBOX labs is committed to the development of the DAO fundraising system, in the hope of developing a complete fundraising system. In the first stage, we developed an Ink! version smart contract of MangoBOX protocol based on Juicebox , which is a well-known project on Ethereum.
 
