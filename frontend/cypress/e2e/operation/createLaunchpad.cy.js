@@ -93,21 +93,4 @@ describe('example to-do app', () => {
             cy.wait(1000)
             cy.get('.CreateLaunchpads .create-panel:first').find('.next-btn').click()
         })
-
-        .then(() => {
-            cy.wait(1000)
-            cy.get('.part2 .input-part:first input').type('TestLaunchpad')
-        })
-        .then(() => {
-            cy.wait(1000)
-            cy.get('.part2').find('.finish-btn').click()
-        })
-
-        .then(() => {
-            cy.wait(1000)
-            cy.get('.part3').find('.submit-btn').click()
-        })
-    })
-
-
-})
+       
