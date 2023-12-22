@@ -208,3 +208,71 @@ mod launchpad {
             *self.presale_charge.get(&id).unwrap_or(&0)
         }
     }
+    #[cfg(test)]
+    mod tests {
+        /// Imports all the definitions from the outer scope so we can use them here.
+        use super::*;
+        /// Imports `ink_lang` so we can use `#[ink::test]`.
+        use ink_lang as ink;
+        #[ink::test]
+        fn buy_works() {
+            let mut mp = Launchpad::new();
+            assert!(mp.buy(1,1) == false);
+        }
+        #[ink::test]
+        fn create_works() {
+            let mut mp = Launchpad::new();
+            let default_pre = PresaleDetail {
+                id:0,
+                owner:AccountId::default(),
+                start_time:0,
+                end_time:0,
+                soft_cap:0,
+                hard_cap:0,
+                token: AccountId::default(),
+                pay_token: AccountId::default(),
+                minimum_purchase:0,
+                maximum_purchase:0,
+                price_presale:0,
+                project_info:String::from("test"),
+                amount:0
+            };
+            assert!(mp.create(default_pre) == false);
+        }
+        #[ink::test]
+        fn get_all_presale_works() {
+            let  mp = Launchpad::new();
+            assert!(mp.get_all_presale().len() == 0);
+        }
+        #[ink::test]
+        fn get_user_presale_works() {
+            let  mp = Launchpad::new();
+            assert!(mp.get_user_presale().len() == 0);
+        }
+        #[ink::test]
+        fn get_presale_works() {
+            let  mp = Launchpad::new();
+            assert!(mp.get_presale(0).id == 0);
+        }
+        #[ink::test]
+        fn get_presale_charge_works() {
+            let  mp = Launchpad::new();
+            assert!(mp.get_presale_charge(0) == 0);
+        }
+        #[ink::test]
+        fn claim_works() {
+            let mut  mp = Launchpad::new();
+            assert!(mp.claim(0) == false);
+        }
+        #[ink::test]
+        fn state_works() {
+            let  mp = Launchpad::new();
+            assert!(mp.state(0) == false);
+        }
+        #[ink::test]
+        fn get_reward_works() {
+            let  mp = Launchpad::new();
+            assert!(mp.get_reward(0) == 0);
+        }
+    }
+}
