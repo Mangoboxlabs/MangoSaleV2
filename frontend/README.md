@@ -1,4 +1,4 @@
-# Setup mangosale Front-end
+## Setup mangosale Front-end
 
 ## Install `Polkadot JS Extension`
 
